@@ -541,3 +541,29 @@ JavaScript 中 Number.MAX_SAFE_INTEGER 表示最大安全数字，计算结果�
         },
       } = school;
       ```
+
+10. 对 rest 参数的理解
+
+    扩展运算符被用到函数形参上时，它还可以把一个分离的参数序列整合成一个数组
+
+    经常用于获取函数的多余参数， 或者处理函数参数个数不确定的情况
+
+    ```js
+    function mul(...args) {
+      let result = 1;
+      for (const val of args) {
+        result *= val;
+      }
+      return result;
+    }
+    mul(1, 2, 3, 4); // 24
+    ```
+
+    这里传入 mul 函数的是四个分离的参数， 但是如果在 mul 函数里尝试输入 args 的值，会得到一个数组
+
+    ```js
+    function mul(...args) {
+      console.log(args);
+    }
+    mul(1, 2, 3, 4); // [1, 2, 3, 4]
+    ```
