@@ -567,3 +567,96 @@ JavaScript 中 Number.MAX_SAFE_INTEGER 表示最大安全数字，计算结果�
     }
     mul(1, 2, 3, 4); // [1, 2, 3, 4]
     ```
+
+#### Javascript 基础
+
+1. new 操作符的实现原理
+
+   new 操作符的执行过程
+
+   - 首先创建一个新的空对象
+   - 设置原型，对对象的原型设置为函数的 prototype 对象
+   - 让函数的 this 指向这个对象， 执行构造函数的代码(为这个新对象添加属性)
+   - 判断函数的返回值类型，如果是值类型，返回创建的对象。 如果是引用类型，就返回这个引用类型的对象
+
+   ```js
+   function new_1(fn) {
+     if (typeof fn !== "function") throw new Error(fn + "is no function");
+
+     /**新建一个空对象*/
+     const o = new Object();
+
+     /**设置原型， 新对象中prototype赋值构造函数的原型*/
+     Object.setPrototypeOf(o, fn.prototype);
+
+     const args = Array.prototype.slice.call(arguments);
+
+     /**this指向新对象， 添加新属性*/
+     const _o = fn.call(o, ...args);
+
+     /**判断是否非空对象*/
+     return _o instanceof Object ? _o : o;
+   }
+   ```
+
+2. Map 和 Object 的区别
+
+- Map
+
+  - 意外的键: Map 默认情况不包含任何键，只包含显式插入的键
+  - 键的类型: Map 的键可以是任何值， 包括函数、 对象或者基本类型
+  - 键的顺序: Map 的 key 是有序的，因此当迭代的时候，Map 对象已插入的顺序返回键值
+  - size: Map 的键值对个数可以轻易地通过 size 属性获取
+  - 迭代: Map 是 iterable 的， 所以可以直接被迭代
+  - 性能: 在频繁增删键对的场景下表现更好
+
+- Object
+
+  - 意外的键: Object 有一个原型，原型链上的键名有可能和自己在对象上的设置的键名产生冲突
+  - 键的类型: Object 的键必须是 String 或是 Symbol
+  - 键的顺序: Object 是无序的
+  - size: 只能手动计算
+  - 迭代：迭代 Object 需要以某种方式获取它的键然后才能迭代
+  - 性能: 在频繁添加和删除键值对的场景下未做出优化
+
+3. Map 和 WeakMap 的区别
+
+- Map
+
+  - 本质上就是键值对的集合，但是普通的 Object 中的键值对中的键只能是字符串，而 ES6 提供的 Map 数据结构类似于对象，但是它的键不限制范围， 可以是任意类型，是一种更加完善的 Hash 结构。 如果 Map 的键是一个原始数据类型，只要两个键严格相同，就视为视为同一个键
+
+  - 实际上 Map 是一个数组， 它的每一个数据也都是一个数组， 其形式如下:
+
+  ```js
+  const map = [
+    ["name", "zhang"],
+    ["age", 18],
+  ];
+  ```
+
+  - Map 数据结构有以下操作方法:
+
+    - size: 返回 Map 结构的成员总数
+    - set(key, value): 设置键名 key 对应的键值 value，然后返回整个 Map 结构，如果 key 已经有值，则键值会被更新，否则就新生成该键(因为返回的是当前 Map 对象，所以可以链式调用)
+    - get(key): 该方法读取 key 对应的键值，如果找不到 key， 返回 undefined
+    - has(key): 该方法返回一个布尔值， 表示某个值是否在当前 Map 对象中
+    - delete(key): 该方法删除某个键，返回 true， 如果删除失败， 返回 false
+    - clear(): map.clear()清除所有成员，没人返回值
+
+  - Map 结构原生提供了三个遍历器生成函数和一个遍历方法
+
+    - keys(): 返回键名的遍历器
+    - values(): 返回键值的遍历器
+    - entries(): 返回所有成员的遍历器
+    - forEach(): 遍历 Map 的所有成员
+
+- WeakMap
+
+  - 也是一组键值对的集合， 其中的键是弱引用的， 其键必须是对象， 原始数据类型不能作为 key 值， 而值可以是任意的
+
+  - 该对象也有存在以下方法
+
+    - set(key, value): 设置键名 key 对应的键值 value， 然后返回整个 Map 结构，如果 key 已经有值，则键值会被更新， 否则就新生成该键(因为返回的是当前 Map 对象， 所以可以链式调用)
+    - get(key): 该方法读取 key 对应的键值，如果找不到 key， 返回 undefined
+    - has(key): 该方法返回一个布尔值， 表示某个键是否在当前 Map 对象中
+    - delete(key): 该方法删除某个键，返回 true， 如果删除失败， 返回 false
