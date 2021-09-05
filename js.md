@@ -438,3 +438,49 @@ JavaScript 中 Number.MAX_SAFE_INTEGER 表示最大安全数字，计算结果�
         Math.max(...nums); // 9
         Math.min(...nums); // 1
         ```
+
+8.  Proxy 可以实现什么功能
+
+    - Proxy 是 ES6 中新增的功能， 它可以用来自定义对象中的操作
+
+      ```js
+      /**
+       * @params target 需要代理的对象
+       * @params handler 自定义对象中的操作，比如可以用来自定义set/get函数
+       * */
+      const p = new Proxy(target, handler);
+      ```
+
+    - Proxy 实现数据响应式
+
+      ```js
+      const onWatch = (obj, setBind, getLogger) => {
+        const handler = {
+          get(target, key, receiver) {
+            getLogger(target, key);
+            return Reflect.get(target, key, receiver);
+          },
+          set(target, key, value, receiver) {
+            setBind(value, key);
+            return Reflect.set(target, key, value, receiver);
+          },
+        };
+        return new Proxy(target, handler);
+      };
+
+      const obj = { a: 1 };
+      const p = onWatch(
+        obj,
+        (v, props) => {
+          console.log(`监听到属性${props}改变为${V}`);
+        },
+        (target, props) => {
+          console.log(`'${props}' = ${target[props]}`);
+        }
+      );
+
+      p.a = 2; // 监听到属性a改变
+      p.a; // 'a' = 2
+      ```
+
+      在上述代码中，通过自定义 set 和 get 函数的方式，在原本的逻辑中插入我们的函数逻辑，实现了在对象任何属性进行了读写时发出通知
