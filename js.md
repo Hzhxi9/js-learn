@@ -314,3 +314,127 @@ JavaScript 中 Number.MAX_SAFE_INTEGER 表示最大安全数字，计算结果�
     - 箭头函数没有 prototype
 
     - 箭头函数不能用作 Generator 函数， 不能使用 yield 关键字
+
+6.  箭头函数的 this 指向哪里
+
+    箭头函数不同于传统 Javascript 中的函数，箭头函数并没有属于自己 this，它所谓的 this 是捕获其所在上下文的 this 值，作为自己的 this 值，并且由于没有属于自己的 this，所以是不会被 new 调用的，这个所谓的 this 也不会被改变
+
+    用 Babel 理解一下箭头函数
+
+    ```js
+    const obj = () => {
+      getArrow(){
+        return () => {
+          console.log(this === obj)
+        }
+      }
+    }
+    ```
+
+    转换后
+
+    ```js
+    // ES5， 由 Babel 转译
+    var obj = {
+      getArrow: function getArrow() {
+        var _this = this;
+        return function () {
+          console.log(_this === obj);
+        };
+      },
+    };
+    ```
+
+7.  扩展运算符的作用及使用场景
+
+    - 对象扩展运算符
+
+      对象的扩展符号(...)用于取出参数对象中的所有可遍历属性， 拷贝到当前对象之中
+
+      ```js
+      let bar = { a: 1, b: 2 };
+      let baz = { ...bar }; // { a: 1, b: 2 }
+      // 等价于 let baz = Object.assign({}, bar);
+      ```
+
+      - `Object.assign`方法用于对象的合并，将源对象(source)的所有可枚举属性， 复制到目标(target)
+      - `Object.assign`方法的第一个参数是目标函数，后面的参数都是源对象(如果目标函数与源对象有同名属性，或多个源对象有同名属性，则后面的属性会覆盖前面的属性)
+
+      - 如果用户自定义的属性，放在扩展运算符后面，则扩展运算符内部的同名属性会被覆盖
+
+        ```js
+        let bar = { a: 1, b: 2 };
+        let baz = { ...bar, ...{ a: 2, b: 4 } }; // { a: 2, b: 4 }
+        ```
+
+      - 扩展运算符对对象实例的拷贝属于浅拷贝
+
+    - 数组扩展运算符
+
+      数组的扩展运算符可以将一个数组转换为逗号分隔的参数序列且每次只能展开一层数组
+
+      ```js
+      console.log(...[1, 2, 3]); // 1, 2, 3
+      console.log(...[1, [2, 3, 4], 5]); // 1, [2, 3, ,4], 5
+      ```
+
+      应用场景
+
+      - 将数组转换为参数序列
+
+        ```js
+        function add(x, y) {
+          return x + y;
+        }
+        const nums = [1, 2];
+        add(...nums); // 3
+        ```
+
+      - 复制数组
+
+        ```js
+        const arr1 = [1, 2];
+        const arr2 = [...arr1];
+        ```
+
+        **扩展运算符(...)用于取出参数对象中的所有可遍历属性， 拷贝到当前对象中， 这里参数对象是个数组，数组里面的所有对象都是基础数据类型，将所有基础数据类型重新拷贝到新的数组中**
+
+      - 合并数组
+
+        ```js
+        const arr1 = [1, 2];
+        const arr2 = [1, ...arr1, 4];
+        ```
+
+      - 扩展运算符与解构赋值结合起来， 用来生成数组
+
+        ```js
+        const [first, ...rest] = [1, 2, 3, 4, 5];
+        console.log(first); // 1
+        console.log(rest); // [2, 3, 4, 5]
+        ```
+
+      - 将字符串转为真正的数组
+
+        ```js
+        [..."hello"]; // ['h', 'e', 'l', 'l', 'o']
+        ```
+
+      - 任何`Iterator`接口的对象， 都可以用扩展运算符转换为真正的数组
+
+        ```js
+        // arguments 对象
+        function foo() {
+          const args = [...arguments];
+        }
+        ```
+
+        **用于替换 ES5 中的 `Array.prototype.slice.call(arguments)`写法**
+
+      - 使用`Math`函数获取数组中特定的值
+
+        ```js
+        const nums = [9, 4, 7, 1];
+        Math.max(...nums); // 9
+        Math.min(...nums); // 1
+        ```
