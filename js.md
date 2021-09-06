@@ -668,3 +668,37 @@ JavaScript 中 Number.MAX_SAFE_INTEGER 表示最大安全数字，计算结果�
 
     - Map 它类似于 Object， 也是键值对的集合，但是键的范围不限于字符串，各种类型的值(包括对象)都可以当作键
     - WeakMap 结构与 Map 结构类似，也是用于生成键值对的集合。但是 WeakMap 只接受对象作为键名(null 除外)，不接受其他类型的值作为键名。而且 WeakMap 的键名所指向的对象，不计入垃圾回收机制
+
+4.  JavaScript 类数组对象的定义
+
+    - 定义
+
+      - 一个拥有 length 属性和若干索引的对象就可以被称为类数组对象， 类数组对象和数组对象类似，但是不能调用数组方法
+      - 常见的类数组对象有 arguments 和 DOM 方法返回的结果
+      - 还有一个函数也可以被看作是类数组对象，因为它含有 length 属性，代表可接收的参数个数
+
+    - 类数组转换数组的方法
+
+      - 通过 call 调用数组 slice 方法来转换
+
+        ```js
+        Array.prototype.slice.call(arguments);
+        ```
+
+      - 通过 call 调用 splice 方法来转换
+
+        ```js
+        Array.prototype.splice.call(arguments, 0);
+        ```
+
+      - 通过 apply 调用 concat 方法来转换
+
+        ```js
+        Array.prototype.concat.apply([], arguments);
+        ```
+
+      - 通过 Array.from 来转换
+
+        ```js
+        Array.from(arguments);
+        ```
