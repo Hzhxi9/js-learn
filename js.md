@@ -743,3 +743,162 @@ JavaScript 中 Number.MAX_SAFE_INTEGER 表示最大安全数字，计算结果�
 
       - 解析和预编译过程中的声明提升可以提高性能，让函数可以在执行时预先为变量分配栈空间
       - 声明提升可以提高 js 代码的容错性，使一些不规范的代码也可以正常执行
+
+#### 原型与原型链
+
+1. 对原型、原型链的理解
+
+   - 在 Javascript 中是使用构造函数来新建一个对象的，每一个构造函数的内部都有一个 prototype 属性，他的属性值是一个对象，这个对象包含了可以由该构造函数的所有实例共享的属性和方法。
+   - 当使用构造函数新建一个对象后，在这个对象的内部将包含一个指针，这个指针指向构造函数的 prototype 属性对应的值，在 ES5 中这个指针被称为对象的原型。一般来说不应该能够获取到这个值，但是现在浏览器中都实现了 proto 属性来访问这个属性，但是最好不要使用这个属性，因为它不是规范中规定的。ES5 中新增了一个 Object.getPrototypeOf()方法，可以通过这个方法来获取对象的原型
+   - 当访问一个对象的属性时，如果这个对象内部不存在这个属性，那么他就会去它的原型对象里找这个属性，这个原型对象又会有自己的原型，于是就这样一直找下去，也就是原型链的概念。原型链的尽头一般来说都是 Object.prototype 所以这就是新建的对象为什么能够使用 toString()等方法的原因
+
+   - 特点: Javascript 对象是通过引用来传递的，创建的每个新对象实体中并没有一份属于自己的原型副本。 当修改原型时，与之相关的对象也会继承这一改变。
+
+2. 原型修改、重写
+
+   ```js
+   function Person(name) {
+     this.name = name;
+   }
+
+   /**修改原型*/
+   Person.prototype.getName = function () {};
+
+   var p = new Person("hello");
+
+   console.log(p.__proto__ === Person.prototype); /**true*/
+   console.log(p.__proto__ === p.constructor.prototype); /**true*/
+
+   /**重写原型*/
+   Person.prototype = {
+     getName: function () {},
+   };
+   var p = new Person("hello");
+
+   console.log(p.__proto__ === Person.prototype);
+   console.log(p.__proto__ === p.constructor.prototype);
+   ```
+
+   可以看到修改原型的时候 p 的构造函数不是指向 Person 了， 因为直接给 Person 的原型对象直接用对象赋值时，它的构造函数指向了根构造函数 Object，所以这时候`p.constructor === Object`而不是`p.constructor === Person`。 想要成立，就要用 constructor 指回来
+
+   ```js
+   Person.prototype = {
+     getName: function () {},
+   };
+   var p = new Person("hello");
+
+   p.constructor = Person;
+
+   console.log(p.__proto__ === Person.prototype); // true
+   console.log(p.__proto__ === p.constructor.prototype); // true
+   ```
+
+3. 原型链指向
+
+```js
+p.__proto__; /**Person.prototype*/
+
+Person.prototype.__proto__; /**Object.prototype*/
+
+p.__proto__.__proto__; /**Object.prototype*/
+
+p.__proto__.constructor.prototype.__proto__; /**Object.prototype*/
+
+Person.prototype.constructor.prototype.__proto__; /**Object.prototype*/
+
+p1.__proto__.constructor; /**Person*/
+
+Person.prototype.constructor; /**Person*/
+```
+
+4.  原型链的终点是什么？ 如何打印出原型链的终点
+
+    - 由于 Object 是构造函数，原型链终点是 Object.prototype.\_\_proto\_\_
+    - 而`Object.prototype.\_\_proto\_\_ === null //true` 所以原型链的终点是 null
+    - 原型链上的所有原型都是对象， 所以对象最终都是由 Object 构造的，而`Object.prototype`的下一级是 Object.prototype.\_\_proto\_\_
+
+5.  如何获得对象非原型链上的属性
+
+    使用后`hasOwnProperty()`方法来判断属性是否属于原型链的属性
+
+    ```js
+    function iterate(obj) {
+      var res = [];
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          res.push(key + ":" + obj[key]);
+        }
+      }
+      return res;
+    }
+    ```
+
+#### 执行上下文/作用域链/闭包
+
+1. 对闭包的理解
+
+   - 定义: 指有权访问另一个函数作用域中变量的函数，创建闭包的最常见的方式就是在一个函数内创建另一个函数，创建的函数可以访问到当前函数的局部变量
+
+   - 有两个常用的用途:
+
+     - 使我们在函数外部能够访问到函数内部的变量。通过使用闭包，可以通过在外部调用闭包函数，从而在外部访问到函数内部的变量，可以使用这种方法来创建私有变量
+     - 使已经结束的函数上下文中的变量对象继续留在内存中，因为闭包函数保留了这个变量对象的引用，所以这个变量对象不会被回收
+
+   - 比如函数 A 内部有一个函数 B， 函数 B 可以访问到函数 A 中的变量，那么函数 B 就是闭包函数
+
+     ```js
+     function A() {
+       let a = 1;
+       window.B = function () {
+         console.log(a);
+       };
+     }
+     A();
+     B(); // 1
+     ```
+
+     在 js 中，闭包存在的意义就是让我们可以间接访问到函数内部的变量。
+
+   - 循环中使用闭包解决 var 定义函数的问题
+
+     ```js
+     for (var i = 1; i <= 5; i++) {
+       setTimeout(function () {
+         console.log(i);
+       }, i * 1000);
+     }
+     ```
+
+     首先因为`setTimeout`是个异步函数，所以会先把循环全部执行完毕，这实话 i 就是 6 了，所以会输出一堆 6
+
+     - 解决方法
+
+     ```js
+     // 第一种: 使用闭包的方式
+     // 首先使用了立即执行函数将i传入函数内部，这个时候值就被固定在了参数j上面不会改变，当下次执行timer这个闭包的时候，就可以使用外部函数的变量j从而达到目的
+     for (var i = 1; i <= 5; i++) {
+       (function (j) {
+         setTimeout(function timer() {
+           console.log(j);
+         }, j * 1000);
+       })(i);
+     }
+
+     // 第二种: 使用setTimeout的第三个参数，这个参数会被当成timer函数的参数传入
+     for (var i = 1; i <= 5; i++) {
+       setTimeout(
+         function timer(j) {
+           console.log(j);
+         },
+         i * 1000,
+         i
+       );
+     }
+
+     // 第三种: 使用let定义i解决问题
+     for (let i = 1; i <= 5; i++) {
+       setTimeout(function timer() {
+         console.log(i);
+       }, i * 1000);
+     }
+     ```
