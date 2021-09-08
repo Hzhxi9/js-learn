@@ -1527,96 +1527,144 @@ Person.prototype.constructor; /**Person*/
 
     上面的代码中， 如果不使用 finally 方法，同样的语句需要为成功和失败两种情况各写一次。 有了 finally 方法，则只需要写一次
 
-5. Promise 解决了什么问题
+5.  Promise 解决了什么问题
 
-   在工作中经常会碰到这样一个需求，比如使用 ajax 发一个 A 请求后，成功后拿到数据，需要把数据传给 B 请求
+    在工作中经常会碰到这样一个需求，比如使用 ajax 发一个 A 请求后，成功后拿到数据，需要把数据传给 B 请求
 
-   ```js
-   const fs = require("fs");
-   fs.readFile("./a.txt", "utf-8", function (error, data) {
-     fs.readFile(data, "utf-8", function (error, data) {
-       fs.readFile(data, "utf-8", function (error, data) {
-         console.log(data);
-       });
-     });
-   });
-   ```
+    ```js
+    const fs = require("fs");
+    fs.readFile("./a.txt", "utf-8", function (error, data) {
+      fs.readFile(data, "utf-8", function (error, data) {
+        fs.readFile(data, "utf-8", function (error, data) {
+          console.log(data);
+        });
+      });
+    });
+    ```
 
-   上面的代码有如下缺点
+    上面的代码有如下缺点
 
-   - 后一个请求需要依赖于前一个请求成功后，将数据往下传递，会导致多个 ajax 请求嵌套的情况，代码不够直观
-   - 如果前后两个请求不需要传递参数的情况下，那么后一个请求也需要前一个请求成功后在执行下一步操作，这种情况下那么也需要如上编写代码，导致代码不够直观
+    - 后一个请求需要依赖于前一个请求成功后，将数据往下传递，会导致多个 ajax 请求嵌套的情况，代码不够直观
+    - 如果前后两个请求不需要传递参数的情况下，那么后一个请求也需要前一个请求成功后在执行下一步操作，这种情况下那么也需要如上编写代码，导致代码不够直观
 
-   ```js
-   // Promise 出现, 解决了地狱回调的问题
-   const fs = require("fs");
-   function read(url) {
-     return new Promise((resolve, reject) => {
-       fs.readFile(url, "utf-8", function (error, data) {
-         error && reject(error);
-         resolve(data);
-       });
-     });
-   }
+    ```js
+    // Promise 出现, 解决了地狱回调的问题
+    const fs = require("fs");
+    function read(url) {
+      return new Promise((resolve, reject) => {
+        fs.readFile(url, "utf-8", function (error, data) {
+          error && reject(error);
+          resolve(data);
+        });
+      });
+    }
 
-   read("./a.txt")
-     .then((data) => {
-       return read(data);
-     })
-     .then((data) => {
-       return read(data);
-     })
-     .then((data) => {
-       console.log(data);
-     });
-   ```
+    read("./a.txt")
+      .then((data) => {
+        return read(data);
+      })
+      .then((data) => {
+        return read(data);
+      })
+      .then((data) => {
+        console.log(data);
+      });
+    ```
 
-6. Promise.all 和 Promise.race 的区别和使用场景
+6.  Promise.all 和 Promise.race 的区别和使用场景
 
-   - Promise.all
+    - Promise.all
 
-     - 可以将多个 Promise 实例包装成一个新的 Promise 实例。同时成功和失败的返回值是不同的，成功的时候返回的是一个结果数组，而失败的时候返回最先被 reject 失败状态的值
-     - Promise.all 中传入的是数组，返回的也是数组，并且会将进行映射，传入的 Promise 对象返回的值是按照顺序在数组中排列的，但是注意的是他们执行的顺序并不是按照顺序的，除非可迭代对象为空
-     - 需要注意，Promise.all 获得的成功结果的数组里面的数据顺序和 Promise 接收到的数组顺序是一致的，这样当遇到发送多个请求并根据请求顺序获取和使用数据的场景，就可以使用 Promise.all 来解决
+      - 可以将多个 Promise 实例包装成一个新的 Promise 实例。同时成功和失败的返回值是不同的，成功的时候返回的是一个结果数组，而失败的时候返回最先被 reject 失败状态的值
+      - Promise.all 中传入的是数组，返回的也是数组，并且会将进行映射，传入的 Promise 对象返回的值是按照顺序在数组中排列的，但是注意的是他们执行的顺序并不是按照顺序的，除非可迭代对象为空
+      - 需要注意，Promise.all 获得的成功结果的数组里面的数据顺序和 Promise 接收到的数组顺序是一致的，这样当遇到发送多个请求并根据请求顺序获取和使用数据的场景，就可以使用 Promise.all 来解决
 
-   - Promise.race
+    - Promise.race
 
-     - 顾名思义， Promise.race 就是赛跑的意思，Promise.race([p1, p2, p3])里面哪个结果获的快，就返回哪个结果，不管结果本身是成功状态还是失败状态。当要做一件事，超过多长时间就不做了，可以用这个方法来解决
+      - 顾名思义， Promise.race 就是赛跑的意思，Promise.race([p1, p2, p3])里面哪个结果获的快，就返回哪个结果，不管结果本身是成功状态还是失败状态。当要做一件事，超过多长时间就不做了，可以用这个方法来解决
 
-     ```js
-     Promise.race([p1, timeOutPromise(5000)]).then((res) => {});
-     ```
+      ```js
+      Promise.race([p1, timeOutPromise(5000)]).then((res) => {});
+      ```
 
-7. 对 async/await 的理解
+7.  对 async/await 的理解
 
-   async/await 其实是 generator 的语法糖，他能实现的效果都能用 then 链来实现，他是为优化 then 链而开发出来的。
+    async/await 其实是 generator 的语法糖，他能实现的效果都能用 then 链来实现，他是为优化 then 链而开发出来的。
 
-   从字面上来看，async 是异步的缩写，await 则为等待，所以很好理解 async 用于申明一个 function 是异步的， 而 await 用于等待一个异步方法执行完成。
+    从字面上来看，async 是异步的缩写，await 则为等待，所以很好理解 async 用于申明一个 function 是异步的， 而 await 用于等待一个异步方法执行完成。
 
-   当然语法上强制规定 await 只能出现在 async 函数中先来看看 async 函数返回了什么
+    当然语法上强制规定 await 只能出现在 async 函数中先来看看 async 函数返回了什么
 
-   ```js
-   async function asy() {
-     return "hello world";
-   }
-   const result = asy();
-   console.log(result);
-   ```
+    ```js
+    async function asy() {
+      return "hello world";
+    }
+    const result = asy();
+    console.log(result);
+    ```
 
-   所以 async 函数返回的是一个 Promise 对象。 async 函数(包含函数语句、 函数表达式、Lambda 表达式)会返回一个 Promise 对象，如果在函数中 return 一个直接量， async 会把这个直接量通过 Promise.resolve()封装成 Promise 对象
+    所以 async 函数返回的是一个 Promise 对象。 async 函数(包含函数语句、 函数表达式、Lambda 表达式)会返回一个 Promise 对象，如果在函数中 return 一个直接量， async 会把这个直接量通过 Promise.resolve()封装成 Promise 对象
 
-   async 函数返回的是一个 Promise 对象，所以在最外层不能用 await 获取其返回值的情况下，当然应该用原来的方式: then 链来处理这个 Promise 对象
+    async 函数返回的是一个 Promise 对象，所以在最外层不能用 await 获取其返回值的情况下，当然应该用原来的方式: then 链来处理这个 Promise 对象
 
-   ```js
-   async function asy() {
-     return "hello world";
-   }
-   const result = asy();
-   result.then((res) => console.log(res)); // hello world
-   ```
+    ```js
+    async function asy() {
+      return "hello world";
+    }
+    const result = asy();
+    result.then((res) => console.log(res)); // hello world
+    ```
 
-   那如果 async 函数没有返回值，他会返回 Promise.resolve(undefined)
+    那如果 async 函数没有返回值，他会返回 Promise.resolve(undefined)
 
-   联想一下 Promise 的特点--无等待，所以在没有 await 的情况下执行 async 函数，他会立即执行，返回一个 Promise，并且绝不会阻塞后面的语句。 这和普通的返回 Promise 对象的函数并无二致
+    联想一下 Promise 的特点--无等待，所以在没有 await 的情况下执行 async 函数，他会立即执行，返回一个 Promise，并且绝不会阻塞后面的语句。 这和普通的返回 Promise 对象的函数并无二致
 
-   注意: Promise.resolve(x) 可以看作是 new Promise(resolve => resolve(x))的简写，可以用于快速封装字面量对象或其他对象，将其封装成 Promise 实例
+    注意: Promise.resolve(x) 可以看作是 new Promise(resolve => resolve(x))的简写，可以用于快速封装字面量对象或其他对象，将其封装成 Promise 实例
+
+8.  await 到底在等啥
+
+    一般来说，都认为是 await 是在等待一个 async 函数完成。 不过按语法说明。 await 等待的是一个表达式， 这个表达式的计算结果是 Promise 对象或者其他值
+
+    因为 async 函数返回一个 Promise 对象，所以 await 可以用于等待一个 async 函数的返回值
+
+    注意到 await 不仅仅用于等 Promise 对象，他可以等任意表达式的结果， 所以 await 后面实际是可以接普通函数调用或者直接量的。
+
+    ```js
+    function getSomething() {
+      return "something";
+    }
+    async function testAsync() {
+      return Promise.resolve("hello async");
+    }
+    async function test() {
+      const v1 = await getSomething();
+      const v2 = await testAsync();
+      console.log(v1, v2);
+    }
+    test();
+    ```
+
+    await 表达式的运算结果取决于它等的是什么
+
+    - 如果它等到的不是一个 Promise 对象， 那 await 表达式的运算结果就是它等到的东西
+    - 如果它等到的是一个 Promise 对象，await 就忙起来了，它会阻塞后面的代码，等着 Promise 对象 resolve，然后得到 resolve 的值，作为 await 表达式的运算结果
+
+    ```js
+    function testAsync() {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(x);
+        }, 3000);
+      });
+    }
+    async function testAwt() {
+      const result = await testAsync("hello world");
+      console.log(result); // 三秒之后输出 hello world
+      console.log("async"); // 三秒之后输出 async
+    }
+    testAwt();
+    console.log("cug"); // 立即输出cug
+    ```
+
+    这就是 await 必须用在 async 函数中的原因，async 函数调用不会造成造成阻塞， 它内部所有的阻塞都被封装在一个 Promise 对象中异步执行。
+    await 暂停当前 async 的执行，所以 cug 最先输出， hello world 和 async 是三秒后同时出现的
