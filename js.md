@@ -1668,3 +1668,218 @@ Person.prototype.constructor; /**Person*/
 
     这就是 await 必须用在 async 函数中的原因，async 函数调用不会造成造成阻塞， 它内部所有的阻塞都被封装在一个 Promise 对象中异步执行。
     await 暂停当前 async 的执行，所以 cug 最先输出， hello world 和 async 是三秒后同时出现的
+
+9.  async / await 的优势
+
+    单一的 Promise 链并不能发现 async/await 的优势，但是如果需要处理由多个 Promise 组成的 then 链的时候，优势就能体现出来了
+
+    假设有一个业务，分多个步骤完成，每个步骤都是异步的，而且依赖于上个步骤的结果
+
+    ```js
+    /**
+     * 传入参数n表示这个函数执行的时间(毫秒)
+     * 执行的结果是 n + 200， 这个值将用于下一步骤
+     */
+    function takeLongTime(n) {
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(n + 200), n);
+      });
+    }
+    function step1(n) {
+      console.log("step1 with " + n);
+      return takeLongTime(n);
+    }
+    function step2(n) {
+      console.log("step2 with" + n);
+      return takeLongTime(n);
+    }
+    function step3(n) {
+      console.log("step3 with" + n);
+      return takeLongTime(n);
+    }
+    ```
+
+    现在用 Promise 方式来实现
+
+    ```js
+    function doIt() {
+      console.time("doIt");
+      const time1 = 300;
+      step1(time1)
+        .then((time2) => step2(time2))
+        .then((time3) => step3(time3))
+        .then((result) => {
+          console.log("result" + result);
+          console.timeEnd("doIt");
+        });
+    }
+    doIt();
+    /**
+     * step1 with 300
+     * step2 with 500
+     * step3 with 700
+     * result with 900
+     */
+    ```
+
+    用 async/await 方式实现
+
+    ```js
+    async function doIt() {
+      console.time("doIt");
+      const time1 = 300;
+      const time2 = await step1(time1);
+      const time3 = await step2(time2);
+      const result = await step3(time3);
+      console.log("result" + result);
+      console.timeEnd("doIt");
+    }
+    doIt();
+    ```
+
+    结果和之前的 Promise 实现是一样的，但是这个代码看起来是不是清晰得多，几乎跟同步代码一致
+
+10. async / await 对比 Promise 的优势
+
+    - 代码读起来更加同步，Promise 虽然摆脱了回调地狱，但是 then 的链式调用也会带来额外的阅读负担
+    - Promise 传递中间值非常麻烦， 而 async/await 几乎是同步的写法，非常优雅
+    - 错误处理友好， async/await 可以用成熟的 try/catch， promise 的错误捕获非常冗余
+    - 调试友好，Promise 的调试很差，由于没有代码块，你不能在一个返回表达式的箭头函数中设置断点，如果你在一个 then 代码块使用调试器的步进(step-over)功能，调试器并不会进入后续的.then 代码块，因为调试器只能跟踪同步代码的每一步
+
+11. async/ await 如何捕获异常
+
+    ```js
+    async function fn() {
+      try {
+        const a = await Promise.reject("error");
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    ```
+
+12. 并发 / 并行的区别
+
+    - 并发是宏观概念，假设分别有任务 A 和任务 B， 在一段时间内通过任务间的切换完成了这两个任务，这种情况就可以称之为并发
+    - 并行是微观概念，假设 CPU 中存在两个核心，那么就可以同时完成任务 A、B。 同时完成多个任务的情况就可以称之为并行
+
+13. 什么是回调函数？ 回调函数有什么缺点？ 如何解决回调地狱？
+
+    ```js
+    ajax(url, () => {
+      // 处理逻辑
+    });
+    ```
+
+    回调函数有一个致命的弱点就是容易写出回调地狱。 假设多个请求存在依赖性，可能有如下代码
+
+    ```js
+    function firstAjax() {
+      ajax(url1, () => {
+        // 处理逻辑
+        secondAjax();
+      });
+    }
+    function secondAjax() {
+      ajax(url2, () => {
+        // 处理逻辑
+      });
+    }
+    ajax(url, () => {
+      firstAjax();
+    });
+    ```
+
+    回调地狱的根本问题就是
+
+    - 嵌套函数存在耦合性，一旦有所改动，就会牵一发而动全身
+    - 嵌套函数一多，就很难处理异常
+    - 不能使用 try/catch 捕获错误
+    - 不能直接 return
+
+14. setTimeout、 setInterval、 requestAnimationFrame 各有什么特点
+
+    - 常见的定时器函数有 setTimeout、 setInterval、 requestAnimationFrame
+    - 最常用的是 setTimeout， 很多人认为 setTimeout 是延时多久， 那就应该是多久后执行
+
+    其实这个观点是错误的，因为 JS 是单线程执行的，如果前面的代码影响了性能，就会导致 setTimeout 不会按期执行。当然可以通过代码修改 setTimeout 从而使定时器相对准确
+
+    ```js
+    let period = 60 * 1000 * 60 * 2;
+    let startTime = new Date().getTime();
+    let count = 0;
+    let end = new Date().getTime() + period;
+    let interval = 1000;
+    let currentInterval = interval;
+    function loop() {
+      count++;
+      // 代码执行所消耗的时间
+      let offset = new Date().getTime() - (startTime + count * interval);
+      let diff = end - new Date().getTime();
+      let h = Math.floor(diff / (60 * 1000 * 60));
+      let hdiff = diff % (60 * 1000 * 60);
+      let m = Math.floor(hdiff / (60 * 1000));
+      let mdiff = hdiff % (60 * 1000);
+      let s = mdiff / 1000;
+      let sCeil = Math.ceil(s);
+      let sFloor = Math.floor(s);
+      // 得到下一次循环所消耗的时间
+      currentInterval = interval - offset;
+      console.log(
+        "时：" + h,
+        "分：" + m,
+        "毫秒：" + s,
+        "秒向上取整：" + sCeil,
+        "代码执行时间：" + offset,
+        "下次循环间隔" + currentInterval
+      );
+      setTimeout(loop, currentInterval);
+    }
+    setTimeout(loop, currentInterval);
+    ```
+
+    接下来看 setInterval， 其实这个函数作用和 setTimeout 基本一致， 只是该函数是每隔一段时间执行一次回调函数
+
+    通常来说不建议使用 setInterval。 第一它和 setTimeout 一样，不能保证在预期的时间执行任务。 第二它存在执行积累的问题
+
+    ```js
+    function fn() {
+      setInterval(function () {
+        console.log(2);
+      }, 1000);
+      sleep(2000);
+    }
+    demo();
+    ```
+
+    以上代码在浏览器环境中，如果定时器执行过程中出现耗时操作，多个回调函数会在耗时操作结束以后同时执行，这样可能就会带来性能上的问题
+
+    如果有循环定时器的需求，其实完全可以通过 request AnimationFrame 来实现
+
+    ```js
+    function setInterval(callback, interval) {
+      let timer;
+      const now = Date.now;
+      let startTime = now();
+      let endTime = startTime;
+
+      const loop = () => {
+        timer = window.requestAnimationFrame(loop);
+        endTime = now();
+        if (endTime - startTime >= interval) {
+          startTime = endTime = now();
+          callback(timer);
+        }
+      };
+      timer = window.requestAnimationFrame(loop);
+      return timer;
+    }
+    let a = 0;
+    setInterval((timer) => {
+      console.log(1);
+      a++;
+      if (a === 3) cancalAnimationFrame(timer);
+    }, 1000);
+    ```
+
+    首先 requestAnimationFrame 自带函数节流功能，基本可以保证在 16.6 毫秒内只执行一次(不掉帧的情况下)，并且该函数的延时效果是精确的， 没有其他定时器时间不准的问题，当然你也可以通过该函数来实现 setTimeout
