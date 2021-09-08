@@ -1294,3 +1294,235 @@ Person.prototype.constructor; /**Person*/
      - 一个 Promise 实例有三种状态， 分别是 pending、 resolved、 rejected，分别代表进行中、已成功、已失败
      - 实例的状态只能由 pending 转变为 resolved 或者 rejected 状态，并且状态一经改变，就凝固了，无法再被改变
      - 在构造 Promise 的时候， 构造函数内部的代码是立即执行的
+
+4. Promise 的基本用法
+
+   - 创建 Promise 对象
+
+     - Promise 对象代表的一个异步操作， 有三种状态: pending(进行中)、fulfilled(已成功)、 rejected(已失败)
+     - Promise 构造函数接受一个函数作为参数，该函数的两个参数分别是 resolve 和 reject
+
+       ```js
+       const promise = new Promise(function (resolve, reject) {
+         if ("异步成功") resolve();
+         else reject();
+       });
+       ```
+
+     - 一般情况下都会使用 new Promise() 来创建 Promise 对象， 但是也可以使用 Promise.resolve 和 Promise.reject 这两个方法
+
+   - Promise.resolve
+
+     Promise.resolve(value) 的返回值也是一个 Promise 对象，可以对返回值进行.then 调用
+
+     ```js
+     Promise.resolve(11).then(function (value) {
+       console.log(value); // 11
+     });
+     ```
+
+     resolve(11) 代码中，会让 promise 对象进入确定状态(resolve 状态)，并将参数 11 传递后面的 then 所指定的 onFulfilled 函数
+
+     创建 Promise 对象可以使用 new Promise 的形式创建对象，也可以使用 Promise.resolve(value)的形式创建 Promise 对象
+
+   - Promise.reject
+
+     Promise.reject 也是 new Promise 的快捷形式， 也创建一个 Promise 对象
+
+     ```js
+     Promise.reject(new Error("error"));
+     ```
+
+     就是下面的代码 new Promise 的简单形式
+
+     ```js
+     new Promise(function (resolve, reject) {
+       reject(new Error("error"));
+     });
+     ```
+
+     下面是使用 resolve 和 reject
+
+     ```js
+     function promise(ready) {
+       return new Promise(function (resolve, reject) {
+         if (ready) resolve("hello world");
+         else reject("error");
+       });
+     }
+
+     /**方法调用*/
+     promise(true).then(
+       function (msg) {
+         console.log(msg);
+       },
+       function (error) {
+         console.log(error);
+       }
+     );
+     ```
+
+   - 给 promise 函数传递一个参数，返回一个 promise 对象
+   - 如果 true 的话，那么调用 promise 对象中的 resolve 方法，并且把其中的参数传递给后面的 then 第一个函数内， 一次打印出"hello world"
+   - 如果 false 的话，会调用 Promise 对象中的 reject 方法，则会进入 then 第二个函数内，打印'error'
+
+- Promise 方法
+
+  Promise 有五个常用的方法: then、 catch、 all、 race、 finally
+
+  - then
+
+    当 Promise 执行的内容符合成功条件时，调用 resolve 函数，失败就调用 reject 函数
+
+    ```js
+    promise.then(
+      function (value) {
+        // success
+      },
+      function (error) {
+        // fail
+      }
+    );
+    ```
+
+    then 方法可以接受两个回调函数作为参数。 第一个回调函数是 Promise 对象的状态变为 resolve 时调用，第二个回调函数是 Promise 对象的状态变为 rejected 时候调用。其中第二个参数可以省略。
+
+    then 方法返回的是一个新的 Promise 实例(不是原来那个 Promise 实例)，因此可以采用链式写法，即 then 方法后面在调用另一个 then 方法
+
+    ```js
+    const promise = new Promise((resolve, reject) => {
+      ajax("first").success(function (res) {
+        resolve(res);
+      });
+    });
+
+    promise
+      .then((res) => {
+        return new Promise((resolve, reject) => {
+          resolve(res);
+        });
+      })
+      .then((res) => {
+        return new Promise((resolve, reject) => {
+          ajax("second").success(function (res) {
+            resolve(res);
+          });
+        });
+      })
+      .then((res) => {});
+    ```
+
+  - catch
+
+    Promise 对象除了有 then 方法，还有 catch 方法， 该方法相当于 then 方法的第二个参数，指向 reject 的回调函数。
+
+    不过 catch 方法还有一个作用，就是在执行 resolve 回调函数时，如果出现错误，抛出异常，不会停止运行，而是进入 catch 方法中
+
+    ```js
+    p.then(
+      (data) => {
+        console.log("resolve" + data);
+      },
+      (error) => {
+        console.log("rejected" + error);
+      }
+    );
+
+    p.then((data) => {
+      console.log("resolve" + data);
+    }).catch((error) => {
+      console.log("reject" + error);
+    });
+    ```
+
+  - all
+
+    all 方法可以完成并行任务， 它接收一个数组，数组的每一项都是一个 promise 对象。当数组中所有的 promise 的状态都达到 resolve 的时候， all 方法的状态就会变成 resolved， 如果有一个状态变成了 rejected，那么 all 方法的状态就会变成 rejected
+
+    ```js
+    const promise1 = new Promise((resolve, reject) => {
+      setTimeout(() => resolve(1), 2000);
+    });
+    const promise2 = new Promise((resolve, reject) => {
+      setTimeout(() => resolve(2), 1000);
+    });
+    const promise3 = new Promise((resolve, reject) => {
+      setTimeout(() => resolve(3), 3000);
+    });
+    Promise.all([promise1, promise2, promise3]).then((res) => {
+      console.log(res); // [1,2,3]
+    });
+    ```
+
+  - race
+
+    race 方法和 all 一样，接受的参数是一个每项都是 promise 数组， 但是与 all 不同的是， 当最先执行的事件执行完之后， 就直接返回该 promise 对象的值。
+    如果第一个 promise 对象状态变为 resolved，那自身的状态变成了 resolved；反之第一个 promise 变成 rejected，那自身状态就会变成 rejected
+
+    ```js
+    const promise1 = new Promise((resolve, reject) => {
+      setTimeout(() => resolve(1), 2000);
+    });
+    const promise2 = new Promise((resolve, reject) => {
+      setTimeout(() => resolve(2), 1000);
+    });
+    const promise3 = new Promise((resolve, reject) => {
+      setTimeout(() => resolve(3), 3000);
+    });
+    Promise.race([promise1, promise2, promise3]).then(
+      (res) => {
+        console.log(res); // 2
+      },
+      (error) => {
+        consol.log(error);
+      }
+    );
+    ```
+
+    - 应用场景: 当要做一件事，超过多长时间就不做了，可以用这个方法来解决
+
+      ```js
+      Promise.race([promise1, timeOutPromise(5000)]).then((res) => {});
+      ```
+
+  - finally
+
+    finally 方法用于指定不管 Promise 对象最后状态如何，都会执行的操作
+
+    ```js
+    promise
+      .then((res) => {})
+      .catch((error) => {})
+      .finally(() => {});
+    ```
+
+    不管 promise 最后的状态，在执行完 then 或者 catch 指定的回调函数以后，都会执行 finally 方法指定的回调函数
+
+    下面是一个例子，服务器使用 promise 处理请求，然后使用 finally 方法关掉服务器
+
+    ```js
+    server
+      .listen(port)
+      .then(() => {})
+      .finally(server.stop);
+    ```
+
+    finally 方法的回调函数不接受任何参数， 这意味着没有办法知道，前面的 Promise 状态到底是 fulfilled 还是 rejected。 这表明 finally 方法里面的操作， 应该是与状态无关的，不依赖于 Promise 的执行结果。
+
+    finally 本质上是 then 方法的特例
+
+    ```js
+    promise.finally(() => {});
+
+    /**等同于*/
+    promise.then(
+      (res) => {
+        return res;
+      },
+      (error) => {
+        throw error;
+      }
+    );
+    ```
+
+    上面的代码中， 如果不使用 finally 方法，同样的语句需要为成功和失败两种情况各写一次。 有了 finally 方法，则只需要写一次
