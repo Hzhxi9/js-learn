@@ -22,4 +22,11 @@ function instanceOf(left, right) {
 
 console.log(instanceOf([1, 2, 3], Array));
 
-function newFn() {}
+function newFn(fn) {
+  if (typeof fn !== "function") throw new TypeError(fn + "is no function");
+  const o = new Object();
+  Object.setPrototypeOf(o, fn.prototype);
+  const args = Array.prototype.slice.call(arguments);
+  const _o = fn.call(o, ...args);
+  return _o instanceof Object ? _o : o;
+}
