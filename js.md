@@ -1526,3 +1526,63 @@ Person.prototype.constructor; /**Person*/
     ```
 
     上面的代码中， 如果不使用 finally 方法，同样的语句需要为成功和失败两种情况各写一次。 有了 finally 方法，则只需要写一次
+
+5. Promise 解决了什么问题
+
+   在工作中经常会碰到这样一个需求，比如使用 ajax 发一个 A 请求后，成功后拿到数据，需要把数据传给 B 请求
+
+   ```js
+   const fs = require("fs");
+   fs.readFile("./a.txt", "utf-8", function (error, data) {
+     fs.readFile(data, "utf-8", function (error, data) {
+       fs.readFile(data, "utf-8", function (error, data) {
+         console.log(data);
+       });
+     });
+   });
+   ```
+
+   上面的代码有如下缺点
+
+   - 后一个请求需要依赖于前一个请求成功后，将数据往下传递，会导致多个 ajax 请求嵌套的情况，代码不够直观
+   - 如果前后两个请求不需要传递参数的情况下，那么后一个请求也需要前一个请求成功后在执行下一步操作，这种情况下那么也需要如上编写代码，导致代码不够直观
+
+   ```js
+   // Promise 出现, 解决了地狱回调的问题
+   const fs = require("fs");
+   function read(url) {
+     return new Promise((resolve, reject) => {
+       fs.readFile(url, "utf-8", function (error, data) {
+         error && reject(error);
+         resolve(data);
+       });
+     });
+   }
+
+   read("./a.txt")
+     .then((data) => {
+       return read(data);
+     })
+     .then((data) => {
+       return read(data);
+     })
+     .then((data) => {
+       console.log(data);
+     });
+   ```
+
+6. Promise.all 和 Promise.race 的区别和使用场景
+
+   - Promise.all
+
+     - 可以将多个 Promise 实例包装成一个新的 Promise 实例。同时成功和失败的返回值是不同的，成功的时候返回的是一个结果数组，而失败的时候返回最先被 reject 失败状态的值
+     - Promise.all 中传入的是数组，返回的也是数组，并且会将进行映射，传入的 Promise 对象返回的值是按照顺序在数组中排列的，但是注意的是他们执行的顺序并不是按照顺序的，除非可迭代对象为空
+     - 需要注意，Promise.all 获得的成功结果的数组里面的数据顺序和 Promise 接收到的数组顺序是一致的，这样当遇到发送多个请求并根据请求顺序获取和使用数据的场景，就可以使用 Promise.all 来解决
+
+   - Promise.race
+
+     - 顾名思义， Promise.race 就是赛跑的意思，Promise.race([p1, p2, p3])里面哪个结果获的快，就返回哪个结果，不管结果本身是成功状态还是失败状态。当要做一件事，超过多长时间就不做了，可以用这个方法来解决
+
+     ```js
+     Promise.race([p1, timeOutPromise(5000)]).then((res) => {});
+     ```
