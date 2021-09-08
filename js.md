@@ -996,3 +996,67 @@ Person.prototype.constructor; /**Person*/
 
        - 全局上下文: 变量定义、 函数声明
        - 函数上下文: 变量定义、 函数声明、 this、 arguments
+
+#### this/call/apply/bind
+
+1. 对 this 对象的理解
+
+   - this 是执行上下文中的一个属性，它指向最后一次调用这个方法的对象。 在实际开发中， this 的指向可以通过四种调用模式来判断
+
+     - 函数调用模式， 当一个函数不是一个对象的属性时，直接作为函数来调用时，this 指向全局对象
+     - 方法调用模式，如果一个函数作为一个对象的方法来调用时， this 指向这个对象
+     - 构造器调用模式，如果一个函数用 new 调用时，函数执行前新创建一个对象，this 指向这个新创建的对象
+     - apply、call、 bind 调用模式: 这三个方法都可以显示的指定调用函数的 this 指向。
+
+       - apply 方法接收两个参数， 一个是 this 绑定的对象，一个是参数数组
+       - call 方法接受不了的参数: 第一个是 this 绑定的对象， 后面的其余参数是传入函数执行的参数。也就是说，在使用 call()方法时，传递给函数的参数必须逐个列举出来
+       - bind 方法通过传入一个对象，返回一个 this 绑定了传入对象的新函数。这个函数的 this 指向除了使用 new 时会被改变，其他情况下都不会改变
+
+     - 总结: 这四种方式，使用构造器调用模式的优先级最高， 然后是 apply、call、bind 调用模式，然后是方法调用模式、然后是函数调用模式
+
+2. call() 和 apply() 的区别
+
+   - 它们的作用一模一样，区别仅在于传入参数的形式的不同
+
+     - apply 接受两个参数， 第一个参数指定了函数体内 this 对象的指向， 第二个参数为一个带下标的集合， 这个集合可以为数组，也可以为类数组，apply 方法把这个集合中的元素作为参数传递给被调用的函数
+     - call 传入的参数数量不固定， 跟 apply 相同的是，第一个参数也是代表函数体内的 this 指向， 从第二个参数开始往后，每个参数被依次传入函数
+
+3. 实现 call、 apply、 bind 函数
+
+   - call 函数的实现步骤
+
+     - 判断调用对象是否为函数，即使是定义在函数的原型上的，但是可能出现使用 call 等方式调用的情况
+     - 判断传入上下文对象是否存在，如果不存在，则设置为 window
+     - 处理传入的参数，截取第一个参数后的所有参数
+     - 将函数作为上下文对象的一个属性
+     - 使用上下文对象来调用这个方法，并保存返回结果
+     - 删除刚才新增的属性
+     - 返回结果
+
+     ```js
+     Function.prototype.call2 = function (context = window) {
+       // 判断调用函数
+       if (typeof this !== "function") {
+         console.error(this + "is no function");
+       }
+       // 获取参数
+       const args = Array.prototype.slice.call(arguments, 1);
+       // 声明结果
+       const result = null;
+
+       // 判断context是否传入，如果未传入设置为window
+       context = context || window;
+
+       // 将调用函数方法设置为对象的方法
+       context.fn = this;
+
+       // 调用方法
+       result = context.fn(...args);
+
+       // 删除属性
+       delete context.fn;
+
+       // 返回结果
+       return result;
+     };
+     ```
