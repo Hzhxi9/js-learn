@@ -1163,3 +1163,91 @@ Person.prototype.constructor; /**Person*/
    - async 函数
 
      async 函数是 generator 和 promise 实现的一个自动执行的语法糖，它内部自带执行器，当函数内部执行到一个 await 语句的时候，如果语句返回一个 promise 对象，那么函数将会等待 promise 对象的状态变为 resolve 后再继续向下执行。因此可以将异步逻辑，转化为同步的顺序来书写，并且这个函数可以自动执行
+
+2. setTimeout、 Promise、 Async/Await 的区别
+
+   - setTimeout
+
+     ```js
+     console.log('1. script start'')
+     setTimeout(function(){
+       console.log('2. timeout')
+     })
+     console.log('3. script end')
+
+     // 输出顺序: 1. script start => script end => timeout
+     ```
+
+   - Promise
+
+     Promise 本身是同步的立即执行函数，当在 executor 中执行 resolve 或者 reject 的时候， 此时是异步操作， 会先执行 then/catch 等，当主栈完成后，才会去调用 resolve/reject 中存放的方法执行，打印 p 的时候，是打印的返回结果， 一个 Promise 实例
+
+     ```js
+     console.log("script start");
+
+     let promise1 = new Promise(function (resolve) {
+       console.log("promise1");
+       resole();
+       console.log("promise1 end");
+     }).then(function () {
+       console.log("promise2");
+     });
+
+     setTimeout(function () {
+       console.log("setTimeout");
+     });
+
+     console.log("script end");
+
+     // 输出顺序: script start => promise1 => promise1 end => script end => promise2 => setTimeout
+     ```
+
+     当 JS 主线程执行 Promise 对象时:
+
+     - promise1.then() 的回调就是一个 task
+     - promise1 是 resolved 或 rejected： 那这个 task 就会放入当前事件循环回合的 microTask queue
+     - promise1 是 pending: 这个 task 就会放入 事件循环的未来某个(可能下一个)回合的 microTask queue 中
+     - setTimeout 的回调也是一个 task， 它会被放入 microTask 即使是 0ms 的情况
+
+   - async/await
+
+     ```js
+     async function async1() {
+       console.log("async1 start");
+       await async2();
+       console.log("async1 end");
+     }
+
+     async function async2() {
+       console.log("async2");
+     }
+
+     console.log("script start");
+     async1();
+     console.log("script end");
+
+     // 输入顺序：script start => async1 start => async2 => async1 end => script end
+     ```
+
+   async 函数返回一个 Promise 对象，当函数执行时，一旦遇到 await 就会先返回，等到触发异步操作完成，再执行函数体内后面的语句。可以理解为，是让出了线程， 跳出了 async 函数体
+
+   ```js
+   async function func1() {
+     return 1;
+   }
+   console.log(func1());
+   ```
+
+   func1 的运行结果其实就是一个 Promise 对象。因此也可以使用 then 来处理后续逻辑
+
+   ```js
+   func1().then((res) => {
+     console.log(res); // 1
+   });
+   ```
+
+   await 的含义为等待， 也就是 async 函数需要等待 await 后的函数执行完成并且有了返回结果(Promise 对象)之后，才能继续诗执行下面的代码。
+
+   await 通过返回一个 Promise 对象来实现同步的效果
+
+   
