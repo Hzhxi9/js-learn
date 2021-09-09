@@ -135,9 +135,9 @@ console.log(map.size);
 // first();
 
 /**this 函数调用模式 */
-(function () {
-  console.log(this);
-})();
+// (function () {
+//   console.log(this);
+// })();
 
 /**call */
 Function.prototype.callFunc = function (context = window) {
@@ -195,3 +195,83 @@ Function.prototype.bindFunc = function (context) {
 
   return Func;
 };
+
+/**异步编程 */
+
+/**回调函数 */
+function callbackFunc(cb) {
+  setTimeout(() => {
+    cb();
+  }, 1000);
+}
+
+function normalFunc() {
+  console.log("normalFunc");
+}
+
+callbackFunc(normalFunc);
+
+/**Promise */
+function promiseFunc(value) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(value);
+    }, 2000);
+  });
+}
+
+const p1 = promiseFunc("hello");
+
+p1.then((value) => console.log(value));
+
+/**generator */
+function* gen(x) {
+  let y = 2 * (yield x + 1);
+  let z = yield y / 3;
+  return x + y + z;
+}
+
+const g = gen(5);
+console.log(g.next()); // { value: 6, done: false }
+console.log(g.next(12)); // { value: 8, done: false }
+console.log(g.next(13)); // { value: 42, done: true }
+
+/**async / await */
+function getSomething() {
+  return "get something";
+}
+async function asyncPromise() {
+  return Promise.resolve("hello promise");
+}
+
+async function asyncFunc() {
+  const v1 = await getSomething();
+  const v2 = await asyncPromise();
+  console.log(v1, "==v1==");
+  console.log(v2, "==v2==");
+}
+
+asyncFunc();
+
+/**Promise.all */
+const promise1 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve(1), 6000);
+});
+const promise2 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve(2), 4000);
+});
+const promise3 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve(3), 2000);
+});
+
+Promise.all([promise1, promise2, promise3])
+  .then((res) => {
+    console.log(res, "===all===");
+  })
+  .catch((error) => {
+    console.log(error, "===error all===");
+  });
+
+Promise.race([promise1, promise2, promise3]).then((res) => {
+  console.log(res);
+});
