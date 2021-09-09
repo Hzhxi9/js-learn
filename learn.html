@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body></body>
+</html>
+
+<script>
+  const obj = {
+    fn() {
+      console.log(this, "===");
+      return () => {
+        console.log(this, "fn");
+      };
+    },
+    fn1() {
+      console.log(this, "===fn1===");
+      return function () {
+        console.log(this, "fn1");
+      };
+    },
+  };
+
+  obj.fn()();
+  obj.fn1()();
+
+  function Person(name) {
+    console.log(this, "==this==");
+    this.name = name;
+  }
+
+  Person.prototype.getName = function (name) {
+    console.log(name);
+  };
+
+  const p = new Person("h");
+
+  console.log(p, "==p==");
+</script>

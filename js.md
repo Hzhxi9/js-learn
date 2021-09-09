@@ -322,13 +322,13 @@ JavaScript 中 Number.MAX_SAFE_INTEGER 表示最大安全数字，计算结果�
     用 Babel 理解一下箭头函数
 
     ```js
-    const obj = () => {
-      getArrow(){
+    const obj = {
+      getArrow() {
         return () => {
-          console.log(this === obj)
-        }
-      }
-    }
+          console.log(this === obj);
+        };
+      },
+    };
     ```
 
     转换后
@@ -660,7 +660,7 @@ JavaScript 中 Number.MAX_SAFE_INTEGER 表示最大安全数字，计算结果�
     - get(key): 该方法读取 key 对应的键值，如果找不到 key， 返回 undefined
     - has(key): 该方法返回一个布尔值， 表示某个键是否在当前 Map 对象中
     - delete(key): 该方法删除某个键，返回 true， 如果删除失败， 返回 false
-    - 其 clear() 方法已经被弃用，所以可以通过创建一个空的 WeakMap 并替换原对象来实现清楚
+    - 其 clear() 方法已经被弃用，所以可以通过创建一个空的 WeakMap 并替换原对象来实现清除
 
   - WeakMap 的设计目的在于，有时想在某个对象上面存放一些数据，但是这会形成对于这个对象的引用。一旦不再需要这两个对象，就必须手动删除这个引用，否则垃圾回收机制就不会释放对象占有的内存。而 WeakMap 的键名所引用的对象都是弱饮用，即垃圾回收机制不将该引用考虑在内。因此，只要所引用的对象的其他引用都被清除，垃圾回收机制就会被释放该对象所占用的内存。也就是说，一旦不在需要，WeakMap 里面的键名对象和所对应的键值对会自动消失，不用手动删除引用
 
