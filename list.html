@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <ul id="container"></ul>
+  </body>
+</html>
+<script>
+  /**获取容器*/
+  const ul = document.getElementById("container");
+  /**插入十万条数据*/
+  const total = 100000;
+  /**一次插入20条*/
+  const once = 20;
+  /**每条记录的索引*/
+  let idx = 0;
+  /**总页数*/
+  let page = total / once;
+
+  /**循环加载数据*/
+  function loop(curTotal, curIdx) {
+    if (curTotal <= 0) return false;
+
+    /**每页多少条*/
+    let pageCount = Math.min(curTotal, once);
+
+    window.requestAnimationFrame(() => {
+      const fragment = document.createDocumentFragment();
+      /**将数据插入容器中*/
+      for (let i = 0; i < pageCount; i++) {
+        let li = document.createElement("li");
+        li.innerText = curIdx + i + " : " + ~~(Math.random() * total);
+        fragment.appendChild(li);
+      }
+      ul.appendChild(fragment);
+      loop(curTotal - pageCount, curIdx + pageCount);
+    }, 0);
+  }
+
+  loop(total, idx);
+</script>

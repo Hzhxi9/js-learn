@@ -6,38 +6,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
-  <body></body>
+  <style>
+    .arrow-tip {
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 15px solid #222;
+      position: relative;
+    }
+
+    .arrow-tip:after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      position: absolute;
+      bottom: -16px;
+      left: -17px;
+      z-index: -1;
+      border-left: 17px solid transparent;
+      border-right: 17px solid transparent;
+      border-bottom: 17px solid red;
+    }
+  </style>
+  <body>
+    <div class="arrow-tip"></div>
+  </body>
 </html>
 
 <script>
-  const obj = {
-    fn() {
-      console.log(this, "===");
-      return () => {
-        console.log(this, "fn");
-      };
-    },
-    fn1() {
-      console.log(this, "===fn1===");
-      return function () {
-        console.log(this, "fn1");
-      };
-    },
-  };
+  // const obj = {
+  //   fn() {
+  //     console.log(this, "===");
+  //     return () => {
+  //       console.log(this, "fn");
+  //     };
+  //   },
+  //   fn1() {
+  //     console.log(this, "===fn1===");
+  //     return function () {
+  //       console.log(this, "fn1");
+  //     };
+  //   },
+  // };
 
-  obj.fn()();
-  obj.fn1()();
+  // obj.fn()();
+  // obj.fn1()();
 
-  function Person(name) {
-    console.log(this, "==this==");
-    this.name = name;
+  // function Person(name) {
+  //   console.log(this, "==this==");
+  //   this.name = name;
+  // }
+
+  // Person.prototype.getName = function (name) {
+  //   console.log(name);
+  // };
+
+  // const p = new Person("h");
+
+  // console.log(p, "==p==");
+
+  var obj1 = { a: 1 };
+
+  function change(obj) {
+    obj.a = 2;
+    obj = {
+      a: 3,
+    };
+    return obj;
   }
 
-  Person.prototype.getName = function (name) {
-    console.log(name);
+  var obj2 = change(obj1);
+
+  console.log(obj1);
+  console.log(obj2);
+
+  // var Foo = function () {
+  //   getName = function () {
+  //     console.log(1);
+  //   };
+
+  // };
+  // Foo.getName = function () {
+  //   console.log(2);
+  // };
+  // Foo.prototype.getName = function () {
+  //   console.log(3);
+  // };
+  // var getName = function () {
+  //   console.log(4);
+  // };
+  // function getName() {
+  //   console.log(5);
+  // }
+
+  // getName();
+  // Foo.getName();
+  // Foo().getName();
+  // getName();
+  // new Foo().getName();
+  // var a = Object.prototype.toString;
+
+  // console.log(a.call(2));
+  // console.log(a.call(true));
+  // console.log(a.call("str"));
+  // console.log(a.call([]));
+  // console.log(a.call(function () {}));
+  // console.log(a.call({}));
+  // console.log(a.call(undefined));
+  // console.log(a.call(null));
+
+  var name = 'windows';
+
+  var ob = {
+    name: 'object',
+    getName: function () {
+      return () => this.name;
+    },
   };
 
-  const p = new Person("h");
-
-  console.log(p, "==p==");
+  console.log(ob.getName()());
 </script>
