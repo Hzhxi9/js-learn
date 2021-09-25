@@ -32,10 +32,43 @@
   </style>
   <body>
     <div class="arrow-tip"></div>
+
+    <button class="btn">按钮</button>
+    <button class="btn">按钮</button>
+    <button class="btn">按钮</button>
+    <button class="btn">按钮</button>
+    <button class="btn">按钮</button>
+    <button class="btn">按钮</button>
+    <button class="btn">按钮</button>
   </body>
 </html>
 
 <script>
+ 
+
+  const btnes = document.querySelectorAll('.btn');
+  for (var i = 0, len = btnes.length; i < len; i++) {
+    (function (j) {
+      btnes[j].onclick = function () {
+        console.log(j);
+      };
+    })(i);
+  }
+
+  function sum() {
+    var cache;
+    if (arguments.length === 1) {
+      cache = arguments[0];
+      return function (args) {
+        return cache + args;
+      };
+    } else {
+      return arguments[0] + arguments[1];
+    }
+  }
+  console.log(sum(1, 2), '==sum==');
+  console.log(sum(2)(3))
+
   // const obj = {
   //   fn() {
   //     console.log(this, "===");
@@ -117,14 +150,92 @@
   // console.log(a.call(undefined));
   // console.log(a.call(null));
 
-  var name = 'windows';
+  // var name = 'windows';
 
-  var ob = {
-    name: 'object',
-    getName: function () {
-      return () => this.name;
-    },
+  // var ob = {
+  //   name: 'object',
+  //   getName: function () {
+  //     return () => this.name;
+  //   },
+  // };
+
+  // console.log(ob.getName()());
+
+  // function fun(n, o) {
+  //   console.log(o);
+  //   return {
+  //     fun: function (m) {
+  //       return fun(m, n);
+  //     },
+  //   };
+  // }
+
+  // var o = {
+  //   fn: function() {
+  //     console.log(fn)
+  //   }
+  // }
+
+  // o.fn()
+
+  var fn = function () {
+    console.log(fn);
   };
+  fn();
 
-  console.log(ob.getName()());
+  // var a = fun(0);
+  // a.fun(1);
+  // a.fun(2);
+  // a.fun(3); //undefined,?,?,?
+  // var b = fun(0).fun(1).fun(2).fun(3); //undefined,?,?,?
+  // var c = fun(0).fun(1);
+  // c.fun(2);
+  // c.fun(3); //undefined,?,?,?
+  // var fn1 = function fn2() {
+  //   console.log('in:fn1<', typeof fn1, '>fn2:<', typeof fn2, '>');
+  // };
+  // console.log('out:fn1<', typeof fn1, '>fn2:<', typeof fn2, '>');
+  // fn1();
+
+  // "实现数组[ 109, 4, 2, 29, 15, 22] 的排序， 要求结果[109, 15, 2, 22, 29, 4]?"
+
+  // console.log('1'.charCodeAt())
+  // console.log('2'.charCodeAt())
+  // console.log('3'.charCodeAt())
+  // console.log('4'.charCodeAt())
+  // console.log('5'.charCodeAt())
+  // console.log('6'.charCodeAt())
+  // console.log('7'.charCodeAt())
+  // console.log('8'.charCodeAt())
+  // console.log('9'.charCodeAt())
+  // console.log('0'.charCodeAt())
+
+  // const sortArr = [109, 4, 2, 29, 15, 22];
+
+  // function unicodeSort(arr) {
+  //   let idx = 0;
+  //   const strings = arr.map((item) => item.toString());
+  //   return strings.sort((a, b) => {
+  //     if (a.charCodeAt(idx) === b.charCodeAt(idx)) {
+  //       idx++;
+  //       return a.charCodeAt(idx) - b.charCodeAt(idx)
+  //     } else {
+  //       idx = 0;
+  //       return a.charCodeAt(idx) - b.charCodeAt(idx)
+  //     }
+  //   });
+  // }
+
+  // console.log(unicodeSort(sortArr));
+
+  function foo(x) {
+    var tmp = 3;
+    return function f2(y) {
+      console.log('temp', tmp);
+      console.log(x + y + ++tmp);
+    };
+  }
+  var bar = foo(3); // bar 现在是一个闭包
+  bar(10); // 17
+  bar(1); //
 </script>
