@@ -76,10 +76,13 @@ class Promises {
        */
       switch (this.status) {
         case FULFILLED:
-          /**调用成功回调, 并且把值返回 */
-          const x = onFulfilled(this.value);
-          /**传入 resolvePromise 集中处理 */
-          resolvePromise(x, resolve, reject);
+          /**创建一个微任务等待 promises2 完成初始化 */
+          queueMicrotask(() => {
+            /**调用成功回调, 并且把值返回 */
+            const x = onFulfilled(this.value);
+            /**传入 resolvePromise 集中处理 */
+            resolvePromise(promises2, x, resolve, reject);
+          });
           break;
         case REJECTED:
           /**调用失败回调, 并且把原因返回 */
@@ -101,13 +104,16 @@ class Promises {
   }
 }
 
-function resolvePromise(x, resolve, reject) {
+function resolvePromise(p2, x, resolve, reject) {
+  /**如果相等, 说明return的是自己, 抛出类型错误并返回 */
+  if (p2 === x) return reject(new TypeError('Chaining cycle detected for promise #<Promise>'));
+
   /**判断 x 是不是 Promises 实例对象 */
   if (x instanceof Promises) {
     /**
      * 执行 x, 调用 then 方法, 目的是将其状态变为fulfilled 或者 rejected
      * x.then(value => resolve(value), reason => reject(reason))
-     * 简化zh
+     * 简化之后
      */
     x.then(resolve, reject);
   } else {
