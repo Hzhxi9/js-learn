@@ -58,33 +58,61 @@ class Promises {
       this.reason = reason; /**保存失败之后的原因 */
 
       /**reject里面将所有失败的回调拿出来执行 */
-      while(this.onRejectedCallbacks.length){
+      while (this.onRejectedCallbacks.length) {
         this.onRejectedCallbacks.shift()(reason);
       }
     }
   };
 
   then(onFulfilled, onRejected) {
-    /**判断状态 */
-    switch (this.status) {
-      case FULFILLED:
-        /**调用成功回调, 并且把值返回 */
-        onFulfilled(this.value);
-        break;
-      case REJECTED:
-        /**调用失败回调, 并且把原因返回 */
-        onRejected(this.reason);
-        break;
-      case PENDING:
-        /**
-         * 因为不知道后续状态的变化情况,
-         * 所以将成功和失败的回调函数存储起来
-         * 等到执行成功失败函数的时候在传递
-         */
-        this.onFulfilledCallbacks.push(onFulfilled);
-        this.onFulfilledCallbacks.push(onRejected);
-        break;
-    }
+    /**
+     * 为了实现链式调用这里直接创建一个promise类,
+     * 并在后面 return 出去
+     */
+    const promises2 = new Promises((resolve, reject) => {
+      /**
+       * 这里的内容在执行器中, 会理解执行
+       * 判断状态
+       */
+      switch (this.status) {
+        case FULFILLED:
+          /**调用成功回调, 并且把值返回 */
+          const x = onFulfilled(this.value);
+          /**传入 resolvePromise 集中处理 */
+          resolvePromise(x, resolve, reject);
+          break;
+        case REJECTED:
+          /**调用失败回调, 并且把原因返回 */
+          onRejected(this.reason);
+          break;
+        case PENDING:
+          /**
+           * 因为不知道后续状态的变化情况,
+           * 所以将成功和失败的回调函数存储起来
+           * 等到执行成功失败函数的时候在传递
+           */
+          this.onFulfilledCallbacks.push(onFulfilled);
+          this.onFulfilledCallbacks.push(onRejected);
+          break;
+      }
+    });
+
+    return promises2;
+  }
+}
+
+function resolvePromise(x, resolve, reject) {
+  /**判断 x 是不是 Promises 实例对象 */
+  if (x instanceof Promises) {
+    /**
+     * 执行 x, 调用 then 方法, 目的是将其状态变为fulfilled 或者 rejected
+     * x.then(value => resolve(value), reason => reject(reason))
+     * 简化zh
+     */
+    x.then(resolve, reject);
+  } else {
+    /**普通值 */
+    resolve(x);
   }
 }
 
