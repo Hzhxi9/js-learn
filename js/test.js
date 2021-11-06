@@ -7,8 +7,28 @@ const p = new Promises((resolve, reject) => {
   }, 2000);
 });
 
+
 p.then(
   value => {
+    console.log(1)
+    console.log(value);
+  },
+  reason => {
+    console.log(reason);
+  }
+);
+p.then(
+  value => {
+      console.log(2)
+    console.log(value);
+  },
+  reason => {
+    console.log(reason);
+  }
+);
+p.then(
+  value => {
+    console.log(3)
     console.log(value);
   },
   reason => {

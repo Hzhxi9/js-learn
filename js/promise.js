@@ -20,10 +20,11 @@ class Promises {
   reason = null;
 
   /**缓存成功与失败回调 */
+
   /**存储成功回调函数 */
-  onFulfilledCallback = null;
+  onFulfilledCallbacks = [];
   /**存储失败回调函数 */
-  onRejectedCallback = null;
+  onRejectedCallbacks = [];
 
   /**
    * resolve 和 reject 用箭头函数的原因:
@@ -37,8 +38,15 @@ class Promises {
     if (this.status === PENDING) {
       this.status = FULFILLED; /**修改状态为成功 */
       this.value = value; /**保存成功之后的值 */
-      /**判断成功回调是否存在, 如果存在就调用 */
-      this.onFulfilledCallback && this.onFulfilledCallback(value);
+
+      /**resolve里面将所有成功的回调拿出来执行 */
+      while (this.onFulfilledCallbacks.length) {
+        /**
+         * Array.shift() 取出数组第一个元素，然后（）调用
+         * shift不是纯函数，取出后，数组将失去该元素，直到数组为空
+         */
+        this.onFulfilledCallbacks.shift()(value);
+      }
     }
   };
 
@@ -48,8 +56,11 @@ class Promises {
     if (this.status === REJECTED) {
       this.status = REJECTED; /**修改状态为失败 */
       this.reason = reason; /**保存失败之后的原因 */
-       /**判断失败回调是否存在, 如果存在就调用 */
-       this.onRejectedCallback && this.onRejectedCallback(reason);
+
+      /**reject里面将所有失败的回调拿出来执行 */
+      while(this.onRejectedCallbacks.length){
+        this.onRejectedCallbacks.shift()(reason);
+      }
     }
   };
 
@@ -70,8 +81,8 @@ class Promises {
          * 所以将成功和失败的回调函数存储起来
          * 等到执行成功失败函数的时候在传递
          */
-        this.onFulfilledCallback = onFulfilled;
-        this.onFulfilledCallback = onRejected;
+        this.onFulfilledCallbacks.push(onFulfilled);
+        this.onFulfilledCallbacks.push(onRejected);
         break;
     }
   }
