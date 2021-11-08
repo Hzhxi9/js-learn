@@ -18,17 +18,16 @@ const p = new Promises((resolve, reject) => {
 //     }
 //   );
 
-Promises.resolve()
-  .then(() => {
-    console.log(0);
-    return Promises.resolve(4);
-  })
-  .then(res => console(res));
+const p1 = new Promises((resolve, reject) => {
+  setTimeout(() => resolve(3), 2000);
+});
 
-// p1.then(value => {
-//   console.log(2);
-//   console.log(value);
-// }, reason => {
-//   console.log(3)
-//   console.log(reason.message)
-// })
+const p2 =  new Promises((resolve, reject) => {
+  setTimeout(() => resolve(4), 3000);
+});
+
+Promises.all([p1, p2]).then(res => console.log(res))
+
+Promises.race([p1, p2]).then((res) => {
+  console.log(res);
+});

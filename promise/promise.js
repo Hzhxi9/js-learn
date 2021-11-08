@@ -82,6 +82,32 @@ class Promises {
     return new Promises((resolve, reject) => reject(reason));
   }
 
+  /**race 静态方法 */
+  static race(promises) {
+    return new Promises((resolve, reject) => {
+      for (let i = 0, len = promises.length; i < len; i++) promises[i].then(resolve, reject);
+    });
+  }
+
+  /**all 静态方法 => 获取所有的promise，都执行then，把结果放到数组，一起返回 */
+  static all(promises) {
+    const arr = [];
+    let i = 0;
+    function processData(index, data,resolve) {
+      arr[index] = data;
+      i++;
+      if (i === promises.length) resolve(arr);
+    }
+
+    return new Promises((resolve, reject) => {
+      for (let i = 0, len = promises.length; i < len; i++) {
+        promises[i].then(data => {
+          processData(i, data, resolve);
+        }, reject);
+      }
+    });
+  }
+
   then(onFulfilled, onRejected) {
     /**如果不传, 就使用默认函数 */
     const realOnFulfilled = typeof onFulfilled === 'function' ? onFulfilled : value => value;
@@ -152,13 +178,17 @@ class Promises {
 }
 
 function resolvePromises(p2, x, resolve, reject) {
-  /**如果相等, 说明return的是自己, 抛出类型错误并返回 */
+  /**
+   * 循环引用报错
+   * 如果相等, 说明return的是自己, 抛出类型错误并返回
+   */
   if (p2 === x) return reject(new TypeError('Chaining cycle detected for promise #<Promise>'));
 
   if (typeof x === 'object' || typeof x === 'function') {
     /**x 为 null 时, 直接返回, 走后面流程的逻辑会报错 */
     if (x === null) return resolve(x);
 
+    /**A+ 规定, 声明 then = x 的then方法 */
     let then;
     try {
       /**把 x.then 赋值给 then */
@@ -169,10 +199,11 @@ function resolvePromises(p2, x, resolve, reject) {
     }
 
     if (typeof then === 'function') {
-      /**then 为 函数时 */
+      /**then 为 函数时, 就默认是 promise 方法*/
       let called = false;
 
       try {
+        /** 让 then 执行 第一个参数是 this,后面是 成功回调 和 失败回调 */
         then.call(
           /**this 指向 x */
           x,
@@ -182,13 +213,17 @@ function resolvePromises(p2, x, resolve, reject) {
              * 如果 resolvePromises 和 rejectPromise 均被调用,
              * 或者被同一个参数调用了多次, 则优先采用首次调用并忽略剩下的调用
              * 实现这条需要前面加一个变量 called
+             *
+             * 成功和失败只能调用一个
              */
             if (called) return;
             called = true;
+            /**resolve 的结果依旧是 promise, 那就继续解析 */
             resolvePromises(p2, y, resolve, reject);
           },
           /**如果rejectPromise 因r为参数被调用, 则以 r 参数拒绝 promise */
           r => {
+            /** 成功和失败只能调用一个 */
             if (called) return;
             called = true;
             reject(r);
