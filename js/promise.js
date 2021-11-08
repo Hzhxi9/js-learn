@@ -82,10 +82,14 @@ class Promises {
         case FULFILLED:
           /**创建一个微任务等待 promises2 完成初始化 */
           queueMicrotask(() => {
-            /**调用成功回调, 并且把值返回 */
+            try {
+              /**调用成功回调, 并且把值返回 */
             const x = onFulfilled(this.value);
             /**传入 resolvePromises 集中处理 */
             resolvePromises(promises2, x, resolve, reject);
+            } catch (error) {
+              reject(error)
+            }
           });
           break;
         case REJECTED:
