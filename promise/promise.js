@@ -155,16 +155,61 @@ function resolvePromises(p2, x, resolve, reject) {
   /**如果相等, 说明return的是自己, 抛出类型错误并返回 */
   if (p2 === x) return reject(new TypeError('Chaining cycle detected for promise #<Promise>'));
 
-  /**判断 x 是不是 Promises 实例对象 */
-  if (x instanceof Promises) {
-    /**
-     * 执行 x, 调用 then 方法, 目的是将其状态变为fulfilled 或者 rejected
-     * x.then(value => resolve(value), reason => reject(reason))
-     * 简化之后
-     */
-    x.then(resolve, reject);
+  if (typeof x === 'object' || typeof x === 'function') {
+    /**x 为 null 时, 直接返回, 走后面流程的逻辑会报错 */
+    if (x === null) return resolve(x);
+
+    let then;
+    try {
+      /**把 x.then 赋值给 then */
+      then = x.then;
+    } catch (error) {
+      /**如果取 x.then 赋值的时候出现错误, 则以 error 为原因拒绝 promise */
+      return reject(error);
+    }
+
+    if (typeof then === 'function') {
+      /**then 为 函数时 */
+      let called = false;
+
+      try {
+        then.call(
+          /**this 指向 x */
+          x,
+          /**如果 resolvePromises 以 y 为参数被调用, 则运行[[Resolve]](p2, y) */
+          y => {
+            /**
+             * 如果 resolvePromises 和 rejectPromise 均被调用,
+             * 或者被同一个参数调用了多次, 则优先采用首次调用并忽略剩下的调用
+             * 实现这条需要前面加一个变量 called
+             */
+            if (called) return;
+            called = true;
+            resolvePromises(p2, y, resolve, reject);
+          },
+          /**如果rejectPromise 因r为参数被调用, 则以 r 参数拒绝 promise */
+          r => {
+            if (called) return;
+            called = true;
+            reject(r);
+          }
+        );
+      } catch (error) {
+        /**
+         * 如果 调用 then 方法判出了异常 error
+         * 如果 resolvePromise 或 rejectPromise 已经被调用, 直接返回
+         */
+        if (called) return;
+
+        /**否则以error 为原因拒绝 promise */
+        reject(error);
+      }
+    } else {
+      /**then 不是函数, 以 x 为参数执行 promise */
+      resolve(x);
+    }
   } else {
-    /**普通值 */
+    /**x 不是 对象或者函数, 以 x 为参数执行 promise */
     resolve(x);
   }
 }
