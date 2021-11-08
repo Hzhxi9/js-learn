@@ -41,15 +41,13 @@ class Promises {
   resolve = value => {
     /**只有状态是等待时才执行状态修改 */
     if (this.status === PENDING) {
-      this.status = FULFILLED; /**修改状态为成功 */
-      this.value = value; /**保存成功之后的值 */
-
+      /**修改状态为成功 */
+      this.status = FULFILLED;
+      /**保存成功之后的值 */
+      this.value = value;
       /**resolve里面将所有成功的回调拿出来执行 */
       while (this.onFulfilledCallbacks.length) {
-        /**
-         * Array.shift() 取出数组第一个元素，然后（）调用
-         * shift不是纯函数，取出后，数组将失去该元素，直到数组为空
-         */
+        /**Array.shift() 取出数组第一个元素，然后（）调用,shift不是纯函数，取出后，数组将失去该元素，直到数组为空 */
         this.onFulfilledCallbacks.shift()(value);
       }
     }
@@ -59,10 +57,13 @@ class Promises {
   reject = reason => {
     /**只有状态是等待时才执行状态修改 */
     if (this.status === PENDING) {
-      this.status = REJECTED; /**修改状态为失败 */
-      this.reason = reason; /**保存失败之后的原因 */
+      /**修改状态为失败 */
+      this.status = REJECTED;
+      /**保存失败之后的原因 */
+      this.reason = reason;
       /**reject里面将所有失败的回调拿出来执行 */
       while (this.onRejectedCallbacks.length) {
+        /**Array.shift() 取出数组第一个元素，然后（）调用,shift不是纯函数，取出后，数组将失去该元素，直到数组为空 */
         this.onRejectedCallbacks.shift()(reason);
       }
     }
@@ -83,49 +84,56 @@ class Promises {
 
   then(onFulfilled, onRejected) {
     /**如果不传, 就使用默认函数 */
-    onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : value => value;
-    onRejected =
+    const realOnFulfilled = typeof onFulfilled === 'function' ? onFulfilled : value => value;
+    const realOnRejected =
       typeof onRejected === 'function'
         ? onRejected
         : reason => {
             throw reason;
           };
 
-    /**
-     * 为了实现链式调用这里直接创建一个promise类,
-     * 并在后面 return 出去
-     */
+    /**为了实现链式调用这里直接创建一个promise类,并在后面 return 出去 */
     const promises2 = new Promises((resolve, reject) => {
+      /**抽离成功微任务调用 */
+      const fulfilledMicrotask = () => {
+        /**创建一个微任务等待 promises2 完成初始化 */
+        queueMicrotask(() => {
+          try {
+            /**调用成功回调, 并且把值返回 */
+            const x = realOnFulfilled(this.value);
+            /**传入 resolvePromises 集中处理 */
+            resolvePromises(promises2, x, resolve, reject);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      };
+
+      /**抽离失败微任务调用 */
+      const rejectedMicrotask = () => {
+        /**创建一个微任务等待 promises2 完成初始化 */
+        queueMicrotask(() => {
+          try {
+            /**调用失败回调, 并且把原因返回 */
+            const x = realOnRejected(this.reason);
+            /**传入 resolvePromises 集中处理 */
+            resolvePromises(promises2, x, resolve, reject);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      };
+
       /**
        * 这里的内容在执行器中, 会理解执行
        * 判断状态
        */
       switch (this.status) {
         case FULFILLED:
-          /**创建一个微任务等待 promises2 完成初始化 */
-          queueMicrotask(() => {
-            try {
-              /**调用成功回调, 并且把值返回 */
-              const x = onFulfilled(this.value);
-              /**传入 resolvePromises 集中处理 */
-              resolvePromises(promises2, x, resolve, reject);
-            } catch (error) {
-              reject(error);
-            }
-          });
+          fulfilledMicrotask();
           break;
         case REJECTED:
-          /**创建一个微任务等待 promise2 等待初始化 */
-          queueMicrotask(() => {
-            try {
-              /**调用失败回调, 并且把原因返回 */
-              const x = onRejected(this.reason);
-              /**传入 resolvePromises 集中处理 */
-              resolvePromises(promises2, x, resolve, reject);
-            } catch (error) {
-              reject(error);
-            }
-          });
+          rejectedMicrotask();
           break;
         case PENDING:
           /**
@@ -133,28 +141,8 @@ class Promises {
            * 所以将成功和失败的回调函数存储起来
            * 等到执行成功失败函数的时候在传递
            */
-          this.onFulfilledCallbacks.push(() => {
-            queueMicrotask(() => {
-              try {
-                /**获取成功回调函数的执行结果 */
-                const x = onFulfilled(this.value);
-                /**传入 resolvePromises 集中处理 */
-                resolvePromises(promises2, x, resolve, reject);
-              } catch (error) {
-                reject(error);
-              }
-            });
-          });
-          this.onRejectedCallbacks.push(() => {
-            try {
-              /**调用失败回调， 并且把原因返回 */
-              const x = onRejected(this.reason);
-              /**传入 resolvePromises 集中处理 */
-              resolvePromises(promises2, x, resolve, reject);
-            } catch (error) {
-              reject(error);
-            }
-          });
+          this.onFulfilledCallbacks.push(fulfilledMicrotask);
+          this.onRejectedCallbacks.push(rejectedMicrotask);
           break;
       }
     });
