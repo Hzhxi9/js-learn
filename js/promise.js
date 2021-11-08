@@ -9,7 +9,12 @@ class Promises {
      * 执行器, 进入会立即执行
      * 并传入 resolve 和 reject
      **/
-    executor(this.resolve, this.reject);
+    try {
+      executor(this.resolve, this.reject);
+    } catch (error) {
+      /**如果发生错误, 就直接执行 reject */
+      this.reject(error);
+    }
   }
 
   /**存储状态的变量, 初始值是 pending */
@@ -106,7 +111,7 @@ class Promises {
 function resolvePromises(p2, x, resolve, reject) {
   /**如果相等, 说明return的是自己, 抛出类型错误并返回 */
   if (p2 === x) return reject(new TypeError('Chaining cycle detected for promise #<Promise>'));
-  
+
   /**判断 x 是不是 Promises 实例对象 */
   if (x instanceof Promises) {
     /**
