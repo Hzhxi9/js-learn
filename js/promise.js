@@ -69,6 +69,10 @@ class Promises {
   };
 
   then(onFulfilled, onRejected) {
+    /**如果不传, 就使用默认函数 */
+    onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : value => value;
+    onRejected = typeof onRejected === 'function'? onRejected : reason => { throw reason };
+
     /**
      * 为了实现链式调用这里直接创建一个promise类,
      * 并在后面 return 出去
