@@ -53,10 +53,9 @@ class Promises {
   /**更改失败后的状态 */
   reject = reason => {
     /**只有状态是等待时才执行状态修改 */
-    if (this.status === REJECTED) {
+    if (this.status === PENDING) {
       this.status = REJECTED; /**修改状态为失败 */
       this.reason = reason; /**保存失败之后的原因 */
-
       /**reject里面将所有失败的回调拿出来执行 */
       while (this.onRejectedCallbacks.length) {
         this.onRejectedCallbacks.shift()(reason);
@@ -80,8 +79,8 @@ class Promises {
           queueMicrotask(() => {
             /**调用成功回调, 并且把值返回 */
             const x = onFulfilled(this.value);
-            /**传入 resolvePromise 集中处理 */
-            resolvePromise(promises2, x, resolve, reject);
+            /**传入 resolvePromises 集中处理 */
+            resolvePromises(promises2, x, resolve, reject);
           });
           break;
         case REJECTED:
@@ -95,7 +94,7 @@ class Promises {
            * 等到执行成功失败函数的时候在传递
            */
           this.onFulfilledCallbacks.push(onFulfilled);
-          this.onFulfilledCallbacks.push(onRejected);
+          this.onRejectedCallbacks.push(onRejected);
           break;
       }
     });
@@ -104,10 +103,10 @@ class Promises {
   }
 }
 
-function resolvePromise(p2, x, resolve, reject) {
+function resolvePromises(p2, x, resolve, reject) {
   /**如果相等, 说明return的是自己, 抛出类型错误并返回 */
   if (p2 === x) return reject(new TypeError('Chaining cycle detected for promise #<Promise>'));
-
+  
   /**判断 x 是不是 Promises 实例对象 */
   if (x instanceof Promises) {
     /**
