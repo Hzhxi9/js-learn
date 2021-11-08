@@ -68,10 +68,28 @@ class Promises {
     }
   };
 
+  /**resolve 静态方法 */
+  static resolve(parameter) {
+    /**传入 自身类就直接返回 */
+    if (parameter instanceof Promises) return parameter;
+    /**转成常规方式 */
+    return new Promises(resolve => resolve(parameter));
+  }
+
+  /**reject 静态方法 */
+  static reject(reason) {
+    return new Promises((resolve, reject) => reject(reason));
+  }
+
   then(onFulfilled, onRejected) {
     /**如果不传, 就使用默认函数 */
     onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : value => value;
-    onRejected = typeof onRejected === 'function'? onRejected : reason => { throw reason };
+    onRejected =
+      typeof onRejected === 'function'
+        ? onRejected
+        : reason => {
+            throw reason;
+          };
 
     /**
      * 为了实现链式调用这里直接创建一个promise类,
