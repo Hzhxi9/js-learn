@@ -84,17 +84,26 @@ class Promises {
           queueMicrotask(() => {
             try {
               /**调用成功回调, 并且把值返回 */
-            const x = onFulfilled(this.value);
-            /**传入 resolvePromises 集中处理 */
-            resolvePromises(promises2, x, resolve, reject);
+              const x = onFulfilled(this.value);
+              /**传入 resolvePromises 集中处理 */
+              resolvePromises(promises2, x, resolve, reject);
             } catch (error) {
-              reject(error)
+              reject(error);
             }
           });
           break;
         case REJECTED:
-          /**调用失败回调, 并且把原因返回 */
-          onRejected(this.reason);
+          /**创建一个微任务等待 promise2 等待初始化 */
+          queueMicrotask(() => {
+            try {
+              /**调用失败回调, 并且把原因返回 */
+              const x = onRejected(this.reason);
+              /**传入 resolvePromises 集中处理 */
+              resolvePromises(promises2, x, resolve, reject);
+            } catch (error) {
+              reject(error);
+            }
+          });
           break;
         case PENDING:
           /**
@@ -102,8 +111,28 @@ class Promises {
            * 所以将成功和失败的回调函数存储起来
            * 等到执行成功失败函数的时候在传递
            */
-          this.onFulfilledCallbacks.push(onFulfilled);
-          this.onRejectedCallbacks.push(onRejected);
+          this.onFulfilledCallbacks.push(() => {
+            queueMicrotask(() => {
+              try {
+                /**获取成功回调函数的执行结果 */
+                const x = onFulfilled(this.value);
+                /**传入 resolvePromises 集中处理 */
+                resolvePromises(promises2, x, resolve, reject);
+              } catch (error) {
+                reject(error);
+              }
+            });
+          });
+          this.onRejectedCallbacks.push(() => {
+            try {
+              /**调用失败回调， 并且把原因返回 */
+              const x = onRejected(this.reason);
+              /**传入 resolvePromises 集中处理 */
+              resolvePromises(promises2, x, resolve, reject);
+            } catch (error) {
+              reject(error);
+            }
+          });
           break;
       }
     });
