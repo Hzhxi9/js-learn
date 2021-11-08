@@ -169,4 +169,14 @@ function resolvePromises(p2, x, resolve, reject) {
   }
 }
 
+/**添加 deferred 进行 Promise A+ 测试*/
+Promises.deferred = function () {
+  var result = {};
+  result.promise = new Promises(function (resolve, reject) {
+    result.resolve = resolve;
+    result.reject = reject;
+  });
+  return result;
+};
+
 module.exports = Promises;
