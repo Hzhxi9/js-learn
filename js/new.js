@@ -9,7 +9,7 @@
  */
 
 function new_1(fn) {
-  if (typeof fn !== "function") throw new Error(fn + "is no function");
+  if (typeof fn !== 'function') throw new Error(fn + 'is no function');
   /**在内存中新建一个对象 */
   const o = new Object();
 
@@ -22,4 +22,12 @@ function new_1(fn) {
 
   /** 判断是否非空对象 */
   return o_ instanceof Object ? o_ : o;
+}
+
+function objectFactory() {
+  const _object = new Object();
+  const Constructor = Array.prototype.slice.call(arguments);
+  _object.__proto__ = Constructor.prototype;
+  const ret = Constructor.apply(_object, arguments);
+  return typeof ret === 'object' ? ret : _object;
 }
