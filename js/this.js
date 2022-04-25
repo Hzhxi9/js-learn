@@ -76,7 +76,7 @@
 // var Object_4_call = {
 //     name: 'Object_4_Call'
 // }
-// console.log(Object_4.sayName()) // Object_4 
+// console.log(Object_4.sayName()) // Object_4
 // /**改变 this 的指向, 指向 Object_4_call 对象 */
 // console.log(Object_4.sayName.call(Object_4_call)) // Object_4_Call
 
@@ -91,7 +91,7 @@
  *    4. new 绑定: 指向 new 出来的对象 => new Class|new Function
  * 优先级:
  *    4 > 3 > 2 > 1
- * ps: 
+ * ps:
  *    bind 后的函数无法在改 this 的指向
  */
 
@@ -99,12 +99,12 @@
 //  var person = {
 //    name: 'person',
 //    sayName: function () {
-//      console.log(this.name);  
+//      console.log(this.name);
 //    },
 //  };
 //  function sayName() {
 //    var sss = person.sayName;
-//    sss(); // window 
+//    sss(); // window
 //    person.sayName(); // person
 //    (b = person.sayName)(); // window
 //  }
@@ -130,7 +130,6 @@
 // };
 
 // var person2 = { name: 'person2' };
-
 
 // person1.foo1(); // person1
 // person1.foo1.call(person2); // person2
@@ -173,7 +172,7 @@ person1.foo1.call(person2); // person2
 person1.foo2(); // person1
 person1.foo2.call(person2); // person1
 
-person1.foo3()(); // window 
+person1.foo3()(); // window
 person1.foo3.call(person2)(); // window
 person1.foo3().call(person2); // person2
 
@@ -183,3 +182,35 @@ person1.foo4().call(person2); // person1
 // person3 = new Person.call(person1); // 会报错 Uncaught TypeError: Person.bind is not a constructor
 var person3 = new (Person.bind(person1))('person3');
 person3.foo1();
+
+// let x = 3;
+// let obj = { x: 5 };
+
+// obj.fn = (function () {
+//   this.x *= ++x; /**this => window | x => 4 | this.x => undefined */
+//   return function (y) {
+//     this.x *= ++x + y;
+//     console.log(x, this.x)
+//   };
+// })();
+
+// let fn = obj.fn;
+// obj.fn(6); /**this => obj | x => 5 | this.x => 5 * (5 + 6) => 55 */
+// fn(4); /**this => window | x => 6  */
+// console.log(obj.x, x); /**obj.x => 55 | x => 6 */
+
+var x = 3;
+var obj = { x: 5 };
+
+obj.fn = (function () {
+  this.x *= ++x; /**this => window | x => 4 | this.x => 3 * 4 => 12 */
+  return function (y) {
+    this.x *= ++x + y; 
+    console.log(x, this.x) 
+  };
+})();
+
+var fn = obj.fn;
+obj.fn(6);  /**this.x => 5 * (13 + 6) => 95 | this => obj | x => 13  */
+fn(4); /** this => window | x => 234 |  this.x => 13 * (14 + 4) => 234   */
+console.log(obj.x, x);  // 95 234
