@@ -90,7 +90,7 @@ console.log(a, b); // 报错
 /**🌰 */
 fn();
 console.log(v1); // 报错
-console.log(v2); 
+console.log(v2);
 console.log(v3);
 function fn() {
   var v1 = (v2 = v3 = 2019);
@@ -98,7 +98,6 @@ function fn() {
   console.log(v2); // 2019
   console.log(v3); // 2019
 }
-
 
 /**
  * 3. 等号左边下的变量提升
@@ -108,33 +107,71 @@ function fn() {
  * 函数左边的变量提升
  *   - 普通函数变量提升
  */
- print()
- function print(){
-     console.log('林一一')
- }
- print() // 带 function 的已经进行了变量提升
+print();
+function print() {
+  console.log('林一一');
+}
+print(); // 带 function 的已经进行了变量提升
 
- /**
-  *  - 匿名函数下带 = 的变量提升
-  */
-  print()
-  var  print = function(){
-      console.log('string');
-  }
-  print()
-  /**
-   * 报错: 由于变量提升机制, 带 var 的 print 一开始是 undefined, 所以报类型错误
-   */
+/**
+ *  - 匿名函数下带 = 的变量提升
+ */
+print();
+var print = function () {
+  console.log('string');
+};
+print();
+/**
+ * 报错: 由于变量提升机制, 带 var 的 print 一开始是 undefined, 所以报类型错误
+ */
 
-  /**
-   * 4. 条件判断下的变量提升
-   */
+/**
+ * 4. 条件判断下的变量提升
+ *    在当前作用域中不管条件是否成立都会进行变量提升
+ */
 
-  /**if else 条件判断下的变量提升 */
-  console.log(a); // undefined
-  if(true){
-      var a = 'string'
-  }
-  console.log(a); // string
+/**if else 条件判断下的变量提升 */
+console.log(a); // undefined
+if (true) {
+  var a = 'string';
+}
+console.log(a); // string
 
+/**if 中 () 内的表达式不会变量提升 */
+var y = 1;
+if (function f() {}) {
+    console.log(typeof f); // undefined
+    y = y + typeof f; // 1undefined
+}
+console.log(y);
+
+/**
+ * 判断的条件没有提升，所以条件内部的 f 是未定义
+ * 为了迎合 ES6 语法只有 JS 执行到条件语句，
+ * 判断条件是成立的才会对条件内的函数赋值，不成立不被赋值只被定义成undefined
+ */
+console.log(print()) // window.print()  => undefined
+if(true){
+    function print(){
+        console.log('string'); // string
+    }
+}
+print(); // undefined
+
+/**🌰 */
+console.log(a); // undefined
+console.log(p()); // 报错
+if(true){
+    var a = 12
+    function p(){
+        console.log('string');
+    }
+}
+
+/**🌰 */
+if(!("value" in window)){
+    var value = 2019; 
+}
+console.log(value);  // undefined
+console.log('value' in window); // true
 
