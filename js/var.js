@@ -32,10 +32,13 @@
  *          不带 var 会向上级作用域查找
  *          如果上级作用域没有就一直找到 window 为止, 这个查找的过程叫作用域链
  */
+
+/**🌰 */
 a = 12; //  === window.a
 console.log(a); // 12
 console.log(window.a); // 12
 
+/**🌰 */
 var a = (b = 12);
 /**相当于 */
 var a = 12;
@@ -140,8 +143,8 @@ console.log(a); // string
 /**if 中 () 内的表达式不会变量提升 */
 var y = 1;
 if (function f() {}) {
-    console.log(typeof f); // undefined
-    y = y + typeof f; // 1undefined
+  console.log(typeof f); // undefined
+  y = y + typeof f; // 1undefined
 }
 console.log(y);
 
@@ -150,28 +153,270 @@ console.log(y);
  * 为了迎合 ES6 语法只有 JS 执行到条件语句，
  * 判断条件是成立的才会对条件内的函数赋值，不成立不被赋值只被定义成undefined
  */
-console.log(print()) // window.print()  => undefined
-if(true){
-    function print(){
-        console.log('string'); // string
-    }
+console.log(print()); // window.print()  => undefined
+if (true) {
+  function print() {
+    console.log('string'); // string
+  }
 }
 print(); // undefined
 
 /**🌰 */
 console.log(a); // undefined
-console.log(p()); // 报错
-if(true){
-    var a = 12
-    function p(){
-        console.log('string');
-    }
+console.log(p()); // 报错, if 变量不会提升
+if (true) {
+  var a = 12;
+  function p() {
+    console.log('string');
+  }
 }
 
 /**🌰 */
-if(!("value" in window)){
-    var value = 2019; 
+if (!('value' in window)) {
+  var value = 2019;
 }
-console.log(value);  // undefined
+console.log(value); // undefined
 console.log('value' in window); // true
 
+/**
+ * 5. 重名问题下的变量提升
+ *
+ * 在 var 和 function 同名的变量提升的条件下, 函数会先执行
+ * 也就是说: var 和 function 的变量同名 var 会先进行变量提升
+ *          但是在变量提升阶段, 函数声明的变量会覆盖 var 的变量提升
+ *          所以直接结果总是函数先执行
+ **/
+
+/**5.1 带 var 和带 function 重名条件下的变量提升优先级, 函数先执行 */
+console.log(a);
+var a = 1;
+function a() {
+  console.log(1);
+}
+/**输出  ƒ a(){ console.log(1);} */
+
+/**或者 */
+console.log(a);
+function a() {
+  console.log(1);
+}
+var a = 1;
+/**输出  ƒ a(){ console.log(1);} */
+
+/**5.2 函数名和 var 声明的变量重名 */
+var fn = 12;
+function fn() {
+  console.log('string');
+}
+console.log(window.fn); // 12
+fn(); // 报类型错误
+
+/**
+ * 带 var 声明和带 function 声明的其实都是在 window 下的属性, 也就是重名了
+ * 根据 变量提升的机制, fn => undefined => 函数
+ * 随后 JS 代码自上而下执行时, 此时的 fn 是 fn = 12， 输出 window.fn = 12
+ * 所以 fn() => 12() 又是一个类型报错
+ */
+
+/**5.3 变量重名在变量提升阶段会重新定义也就是重新赋值 */
+console.log('1::', fn());
+function fn() {
+  console.log(1);
+}
+
+console.log('2::', fn());
+function fn() {
+  console.log(2);
+}
+
+console.log('3::', fn());
+var fn = 'string';
+
+console.log('4::', fn());
+function fn() {
+  console.log(3);
+}
+
+/* 输出
+ *   3
+ *   1 undefined
+ *   3
+ *   2 undefined
+ *   3
+ *   3 undefined
+ *   Uncaught TypeError: fn is not a function
+ *
+ * 同样由于变量土生机制, fn 会被多次重新赋值, 最后赋值的地址值为最后一个函数
+ * 所以调用 fn 都只是在调用 最后一个函数的输出值 3
+ * 代码执行到 var fn = 'string'， fn() 就会导致类型错误
+ **/
+
+/**🌰 */
+var a = 2;
+function a() {
+  console.log(3);
+}
+console.log(typeof a); // number
+
+/**
+ * 变量提升 undefined => 函数提升 function => 赋值 2
+ */
+
+/**🌰 */
+console.log(fn); // fn(){}
+var fn = 2022;
+console.log(fn); // 2022
+function fn() {}
+/**
+ * 在变量提升阶段 fn => undefined => 函数提升修改定义为 function fn(){} => 被修改为 fn = 12
+ */
+
+/**🌰 */
+let a = 0,
+  b = 0;
+
+function fn(a) {
+  fn = function fn2(b) {
+    console.log(a, b);
+    console.log(++a + b);
+  };
+  console.log('a::', a++);
+}
+fn(1); // a => 1
+fn(2); // a => 2, b => 2, (++a + b) => 5
+
+/**6. 函数形参的变量提升 */
+
+/**6.1 函数的形参也会进行一次变量提升 */
+function a(b) {
+  console.log(b);
+}
+a(45);
+/**等价于 */
+function a(b) {
+  var b = undefined;
+  b = 45;
+}
+
+/**🌰 */
+var a = 1;
+function foo(a) {
+  console.log(a); // 1
+  var a;
+  console.log(a); // 1
+}
+foo(a);
+
+/**
+ * 🌰
+ * ps: 匿名函数不带变量是不会有变量提升的操作
+ **/
+var foo = 'string';
+(function (f) {
+  console.log(foo); // undefined
+  var foo = f || 'hello';
+  console.log(foo); // string
+})(foo);
+console.log(foo); // string
+
+/**🌰 */
+var foo = 'string';
+(function (foo) {
+  console.log(foo); // string
+  var foo = foo || 'hello';
+  console.log(foo); // string
+})(foo);
+console.log(foo); // string
+
+/**🌰 */
+var a = 10;
+/**
+ *  匿名函数内部声明的变量属于私有作用域
+ */
+(function () {
+  console.log(a); // undefined
+  a = 5;
+  console.log(window.a); // 10
+  var a = 20;
+  console.log(a); // 20
+})();
+
+/**
+ *  = 的优先级是从右到左
+ *  所以变量提升阶段 b = undefined 后
+ *  将 c 赋值成 undefined
+ *  最后才将这个对象的引用地址给 b
+ */
+var b = { a, c: b };
+console.log(b.c); // undefined
+
+/**🌰 */
+var a = 1;
+function foo(a, b) {
+  console.log(a); // 1
+  a = 2;
+  arguments[0] = 3;
+  var a;
+  console.log(a, this.a, b); // 3 1 undefined
+}
+foo(a);
+
+/**
+ * 7. 非匿名自执行函数的变量提升
+ */
+
+/**7.1 匿名执函数和非匿名自执行函数在全局环境下不具备变量提升机制 */
+var a = 10;
+(function c() {})();
+console.log(c); //报错
+
+/**IIFE 函数具备自己的作用域，所以全局下不会变量提升 */
+
+/**7.2 匿名自执行函数在自己的作用域内存存在正常的变量提升 */
+var a = 10;
+(function () {
+  console.log(a); // 10
+  a = 20;
+  console.log(a); // 20
+})();
+console.log(a); // 20
+
+/**
+ * 7.3 非匿名自执行函数的函数名在自己的作用域内变量提升,
+ *     且修改函数名的值无效,
+ *     这是非匿名函数和普通函数的差别
+ */
+var a = 10;
+(function a() {
+  console.log(a); // function a(){ }
+  a = 20;
+  console.log(a); // function a(){ }
+})();
+
+/**
+ * 在全局环境下, var 声明的变量 a 会先进行变量提升
+ * 但是非匿名函数不会在全局环境下变量提升, 因为具备自己的作用域
+ * 而且上面的函数名 a 同样变量提升, 值就是函数 a 的应用地址值
+ * 而且非匿名自执行函数名是不可以修改的
+ * 即使修改了也不会有任何作用, 严格模式下还会报错
+ * 所以最后输出 function a(){}
+ */
+
+/**🌰 */
+var value = 2019;
+function fn() {
+  console.log(value); // undefined
+  var value = { name: 'Time' };
+  console.log(value); //  { name: "Time" };
+}
+fn();
+console.log(value); // 2019
+
+/**🌰 */
+function fn() {
+  for (var i = 0; i < 5; i++) {
+    console.log(i); // 0, 1, 2, 3, 4
+  }
+  console.log(i); // 5
+}
+fn()
