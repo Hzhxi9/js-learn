@@ -1,3 +1,221 @@
+/**上级作用域的概念 */
+
+/**函数的上级作用域在哪里创建创建的，上级作用域就是谁 */
+var a = 10;
+function foo() {
+  console.log(a); // 12
+}
+function sun() {
+  var a = 20;
+  foo();
+}
+sum();
+/**函数 foo 是在全局下创建的, 所以 a 的上级作用域是 window */
+
+/**🌰 */
+var n = 10;
+function fn() {
+  var n = 20;
+  function f() {
+    n++;
+    console.log(n);
+  }
+  f();
+  return f;
+}
+var x = fn(); // 21
+x(); // 22
+x(); // 23
+console.log(n); // 10
+
+/**
+ * JS 队栈内存释放
+ * - 堆内存:
+ *      存储引用类型值, 对象类型就是键值对, 函数就会死代码字符串
+ * - 堆内存释放:
+ *      将引用类型的空间地址变量赋值成 null, 或没有变量占用堆内存了浏览器就会释放掉这个地址
+ * - 栈内存:
+ *      提供代码执行的环境和存储基本类型值
+ * - 栈内存释放:
+ *      一般当函数执行完函数的私有作用域就会释放掉
+ * - 栈内存释放特殊情况:
+ *      - 函数执行完, 但是函数的私有作用域内有内容被栈外的变量还在使用的, 栈内存就不能释放里面的基本值也就不会被释放
+ *      - 全局下的栈内存只有页面被关闭的时候才会被释放
+ **/
+
+/**闭包概念 */
+
+/**
+ * - JS 忍者秘籍: 闭包允许函数访问并操作函数外部的变量
+ * - 红宝书: 闭包是指有权访问另外一个函数作用域中的变量的函数
+ * - MDN: 闭包是指那些能够访问自由变量的函数, 这里的自由变量是外部函数作用域中的变量
+ * - 总结: 闭包是指有权访问另一个函数作用域中变量的函数
+ */
+
+/**
+ * 形成闭包的原因: 内部的函数存在外部作用域的引用就会导致闭包
+ *
+ * 闭包变量存储的位置: 闭包中的变量存储的位置是堆内存
+ *
+ * 闭包的作用:
+ *    - 保护函数的私有变量不受外部的干扰。形成不销毁的栈内存。
+ *    - 保存，把一些函数内的值保存下来。闭包可以实现方法和属性的私有化
+ */
+
+/**闭包的使用场景 */
+
+/**1. return 一个函数 */
+var n = 10;
+function fn() {
+  var n = 20;
+  function f() {
+    n++;
+    console.log(n);
+  }
+  return f;
+}
+var x = fn();
+x(); // 21
+
+/**2. 函数作为参数 */
+var a = 'string';
+function foo() {
+  var a = 'foo';
+  function fo() {
+    console.log(a);
+  }
+  return fo;
+}
+function f(p) {
+  var a = 'f';
+  p();
+}
+f(foo()); // foo
+
+/**3. IIFE(自执行函数) */
+var n = 'string/';
+(function p() {
+  console.log(n); // string
+})();
+
+/**4. 循环赋值 */
+for (var i = 0; i < 5; i++) {
+  (function (j) {
+    setTimeout(function () {
+      console.log(j);
+    }, 1000);
+  })(i);
+}
+/**
+ * 因为存在闭包的原因上面能依次输出1~10, 闭包形成了10个互不干扰的私有作用
+ * 将外层的自执行函数去掉就不存在外部作用域的引用, 输出的结果就是连续的 10
+ *
+ * 为什么会连续输出 10？
+ *
+ * 因为 JS 是单线程的遇到异步的代码不会先执行(会入栈),
+ * 等到同步的代码执行完 i++ 到 10 时, 异步代码才开始执行此时的 i = 10
+ * 输出的都是 10
+ */
+window.name = 'strings';
+setTimeout(function () {
+  console.log(window.name);
+}, 100);
+
+/**6. 节流防抖 */
+
+/**节流 */
+function throttle(fn, timeout) {
+  let timer = null;
+  return function (...args) {
+    if (timer) return;
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+      timer = null;
+    }, timeout);
+  };
+}
+
+/**防抖 */
+function debounce(fn, timeout) {
+  let timer = null;
+  return function (...args) {
+    timer && clearTimeout(timer);
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+    }, timeout);
+  };
+}
+
+/**7. 柯里化实现 */
+function curry(fn, len = fn.length) {
+  return _curry(fn, len);
+}
+
+function _curry(fn, len, ...args) {
+  return function (...params) {
+    let _args = [...args, ...params];
+    if (_args.length >= len) return fn.apply(this, _args);
+    return _curry.call(this, fn, len, ...args);
+  };
+}
+
+/**
+ * 使用闭包需要注意什么
+ *  容易导致内存泄露
+ *  闭包会携带包含其他的函数作用域, 因此会比其他函数占有更多的内存
+ *  过度使用闭包会导致内存占用过多, 所以要谨慎使用闭包
+ **/
+
+/**🌰: for 循环和闭包 */
+
+/**自执行函数和闭包 */
+var data = [];
+for (var i = 0; i < 3; i++) {
+  (function (i) {
+    data[i] = function () {
+      console.log(i);
+    };
+  })(i);
+}
+
+for (var i = 0; i < 3; i++) {
+  (function (j) {
+    setTimeout(() => {
+      data[j] = function () {
+        console.log(j);
+      };
+    }, 0);
+  })(i);
+}
+
+for (let i = 0; i < 3; i++) {
+  data[i] = function () {
+    console.log(i);
+  };
+}
+
+data[0](); // 0
+data[1](); // 1
+data[2](); // 2
+
+/**🌰 */
+var result = [];
+var a = 3;
+var total = 0;
+function foo(a) {
+  for (var i = 0; i < 3; i++) {
+    result[i] = function () {
+      total += i * a;
+      console.log(total)
+    }
+  }
+}
+
+foo(1);
+result[0]();  // 3
+result[1]();  // 6
+result[2]();  // 9
+
 /**闭包应用 */
 
 /**
