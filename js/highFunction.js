@@ -194,8 +194,80 @@ var cost = (function () {
 
 cost = currying(cost);
 
-cost(100)
-cost(200)
-cost(300)
+cost(100);
+cost(200);
+cost(300);
 
 console.log(cost());
+
+/**
+ * uncurrying: 一个对象未必只能使用它自身的方法, 将泛化的 this 的过程提取出来
+ */
+Function.prototype.uncurrying = function () {
+  /**
+   * 此时的 this 是调用的 uncurrying 的函数
+   * 例如: Array.prototype.push
+   *
+   * @example
+   *  var push = Array.prototype.push.uncurrying()
+   *  var obj = { length: 1, 0: 1 }
+   *  push(obj, 2)
+   *  console.log(obj); // { length: 2, 0: 1, 1: 2 }
+   */
+  var _this = this;
+  return function () {
+    var obj = Array.prototype.shift.call(arguments);
+    /**
+     * obj => { 0: 1, length: 1 }
+     * arguments 对象的第一个元素被截去 => [2]
+     **/
+    return _this.apply(obj, arguments); // 相当于 Array.prototype.push.apply(obj, 2)
+  };
+};
+
+/**
+ * uncurrying 的另外一种实现
+ */
+Function.prototype.uncurrying = function () {
+  var _this = this;
+  return function () {
+    return Function.prototype.call.apply(_this, arguments);
+  };
+};
+
+/**🌰 : 将 Array.prototype.push 转换为一个通用的 push 函数*/
+var push = Array.prototype.push.uncurrying();
+(function () {
+  push(arguments, 4);
+  console.log(arguments); // [1, 2, 3, 4]
+})(1, 2, 3);
+
+/**🌰 : 一次性复制 Array.prototype 的方法 */
+for (var i = 0, fn, arr = ['push', 'shift', 'forEach']; (fn = arr[i++]); ) {
+  Array[fn] = Array.prototype[fn].uncurrying();
+}
+var obj = { 0: 1, 1: 2, 2: 3, length: 3 };
+
+Array.push(obj, 4);
+console.log(obj.length); // 4
+
+var first = Array.shift(obj);
+console.log(first); // 1
+console.log(obj); // { 0: 2, 1: 3, 2: 4, length: 3 }
+
+Array.forEach(obj, function (i, n) {
+  console.log(n);
+});
+
+/**🌰 : Function.prototype.call & Function.prototype.apply 被 uncurrying */
+var call = Function.prototype.call.uncurrying();
+var fn = function (name) {
+  console.log(name);
+};
+console.log(fn, window, 'hello'); // hello
+
+var apply = Function.prototype.apply.uncurrying();
+var fn = function (name) {
+  console.log(this.name, arguments); // hello [1, 2, 3]
+};
+apply(fn, { name: 'hello' }, [1, 2, 3]);
