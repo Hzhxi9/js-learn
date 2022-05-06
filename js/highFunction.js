@@ -271,3 +271,164 @@ var fn = function (name) {
   console.log(this.name, arguments); // hello [1, 2, 3]
 };
 apply(fn, { name: 'hello' }, [1, 2, 3]);
+
+/**
+ * 函数节流
+ *  - 原理: 将即将被执行的函数用 setTimeout 延迟一段时间执行, 如果该次延迟执行还没有完成, 则忽略接下来调用该函数的请求
+ *  - 函数被触发的频率太高时可以使用
+ *  - 应用场景:
+ *    - window.onresize 事件
+ *    - mousemove 事件
+ *    - 上传进度
+ *  @param {Function} 需要被延迟执行的函数
+ *  @param {Number} 延迟执行的时间
+ **/
+var throttle = function (fn, delay = 500) {
+  var _this = fn, //保存需要被延迟执行的函数引用
+    timer, // 定时器
+    first_time; // 是否第一次调用
+
+  return function () {
+    var args = arguments,
+      _me = this;
+
+    if (first_time) {
+      /**如果不是第一次调用, 不需要延迟执行 */
+      _this.apply(_me, args);
+      return (first_time = false);
+    }
+
+    if (timer) {
+      /**如果定时器还在, 说明前一次延迟执行还没有完成 */
+      return false;
+    }
+
+    timer = setTimeout(function () {
+      clearTimeout(timer);
+      timer = null;
+      _this.apply(_me, args);
+    }, delay);
+  };
+};
+
+window.onresize = throttle(function () {
+  console.log(1);
+});
+
+/**
+ * 分时函数
+ *   - 应用场景: 某些函数是用户主动调用的, 因为一些客观原因, 这些函数会影响页面性能
+ */
+
+/**🌰 : 创建 WebQQ 好友列表 */
+var arr = [];
+/**假设 arr 装载了 1000 个好友数据 */
+for (var i = 0; i <= 1000; i++) arr.push(i);
+var renderFriendList = function (data) {
+  for (var i = 0, len = data.length; i < len; i++) {
+    var div = document.createElement('div');
+    div.innerHTML = i;
+    document.body.appendChild(div);
+  }
+};
+/** 短时间内往页面大量添加 DOM 节点会让浏览器吃不消 */
+renderFriendList(arr);
+
+/**
+ * 解决方案: 使用 分时函数(timeChunk)函数, 让创建节点的工资分批进行
+ * 比如 1 秒钟创建 1000 个节点, 改为 200 毫秒创建 8 个节点
+ * @param {any} 创建节点时需要用到的数据
+ * @param {Function} 封装了创建节点逻辑的函数
+ * @param {Number} 每一批创建的节点数量
+ */
+var timeChunk = function (arr, fn, count = 1) {
+  var obj,
+    t,
+    len = arr.length;
+  var start = function () {
+    for (var i = 0; i < Math.min(count, arr.length); i++) {
+      var obj = arr.shift();
+      fn(obj);
+    }
+  };
+  return function () {
+    t = setInterval(function () {
+      /*如果全部节点都被创建好 */
+      if (arr.length === 0) return clearInterval(t);
+      start();
+      /**分批执行的时间间隔, 也可以用参数传入 */
+    }, 200);
+  };
+};
+
+/**🌰 : 创建 WebQQ 好友列表 */
+var arr = [];
+/**假设 arr 装载了 1000 个好友数据 */
+for (var i = 0; i <= 1000; i++) arr.push(i);
+
+var renderFriendList = timeChunk(
+  arr,
+  function (data) {
+    for (var i = 0, len = data.length; i < len; i++) {
+      var div = document.createElement('div');
+      div.innerHTML = i;
+      document.body.appendChild(div);
+    }
+  },
+  8
+);
+
+renderFriendList();
+
+/**
+ * 惰性加载函数
+ *  因为浏览器之间的实现差异, 一些嗅探工作总是不可避免
+ *  比如需要一个在各个浏览器中能够通用的事件绑定函数 addEvent
+ **/
+
+/**
+ * 常见写法
+ *  存在缺点: 每次调用的时候都会执行里面的 if 条件分支, 虽然执行这些 if 分支的开销不算大, 但可以让程序避免这些重复的执行过程
+ **/
+var addEvent = function (elem, type, handler) {
+  if (window.addEventListener) return elem.addEventListener(type, handler, false);
+  if (window.attachEvent) return elem.attachEvent('on' + type, handler);
+};
+
+/**
+ * 第二个方案
+ *  把嗅探浏览器的操作提前到代码加载的时候, 在代码加载的时候就立刻进行一次判断, 以便让 addEvent 返回一个包裹了正确逻辑的函数
+ *  缺点: 也许从头到尾都没有使用 addEvent 函数, 这样子看第一次浏览器嗅探就是完全多余的操作, 也会稍稍延长页面 ready 的时间
+ */
+var addEvent = (function () {
+  if (window.addEventListener) {
+    return function (elem, type, handler) {
+      elem.addEventListener(type, handler, false);
+    };
+  }
+  if (window.attachEvent) {
+    return function (elem, type, handler) {
+      elem.addEvent('on' + type, handler);
+    };
+  }
+})();
+
+/**
+ * 第三种方案: 惰性加载函数
+ * 此时 addEvent 依然被声明为一个普通函数, 在函数里面依然有一些分支判断
+ * 但是在第一次进入条件分支之后, 在函数内部会重写这个函数,
+ * 重写之后就是我们期望的 addEvent 函数
+ * 在下一次进入 addEvent 函数的时候, 函数内部就不存在 条件分支判断
+ */
+var addEvent = function (elem, type, handler) {
+  if (window.addEventListener) {
+    addEvent = function (elem, type, handler) {
+      elem.addEventListener(type, handler, false);
+    };
+  } else if (window.addEvent) {
+    addEvent = function (elem, type, handler){
+      elem.addEvent('on' + type, handler)
+    }
+  }
+  addEvent(elem, type, handler)
+};
